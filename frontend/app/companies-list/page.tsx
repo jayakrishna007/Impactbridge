@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -45,7 +45,7 @@ const allCompanies = [
     { id: 20, name: "Power Grid", type: "csr", sector: "Energy", region: "National", location: "Gurugram, Haryana", impact: "₹140 Cr+ Spent", rating: 4.7 },
 ]
 
-export default function CompaniesListPage() {
+function CompaniesListContent() {
     const searchParams = useSearchParams()
     const [searchTerm, setSearchTerm] = useState("")
     const [typeFilter, setTypeFilter] = useState(searchParams.get("type") || "all")
@@ -192,5 +192,13 @@ export default function CompaniesListPage() {
             </main>
             <Footer />
         </div>
+    )
+}
+
+export default function CompaniesListPage() {
+    return (
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+            <CompaniesListContent />
+        </Suspense>
     )
 }

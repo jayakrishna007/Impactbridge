@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
@@ -17,9 +17,8 @@ import {
 } from "@/components/ui/select"
 import { ArrowLeft, LogIn, Eye, EyeOff, CheckCircle2 } from "lucide-react"
 import { useAuth, UserRole, getDashboardPath } from "@/lib/auth-context"
-import { useEffect } from "react"
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { login } = useAuth()
@@ -217,5 +216,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   )
 }
