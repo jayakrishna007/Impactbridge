@@ -35,42 +35,50 @@ Endpoints:
     GET    /health
 """
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import uuid
+import os
 
 import database as db
 
+# ── Lifespan (replaces deprecated @app.on_event) ───────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await db.connect_db()
+    database = db.get_db()
+    if await database["csr_projects"].count_documents({}) == 0:
+        await seed_csr_projects(database)
+    yield
+    # Shutdown
+    await db.close_db()
+
 # ── App ────────────────────────────────────────────────────────────────────
-app = FastAPI(title="ImpactBridge API", version="3.0.0")
+app = FastAPI(title="ImpactBridge API", version="3.0.0", lifespan=lifespan)
+
+# ── CORS ───────────────────────────────────────────────────────────────────
+# Set FRONTEND_URL in Render env vars to your Vercel production URL
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    FRONTEND_URL,
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://*.vercel.app",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── Lifecycle ──────────────────────────────────────────────────────────────
-@app.on_event("startup")
-async def startup():
-    await db.connect_db()
-    database = db.get_db()
-    if await database["csr_projects"].count_documents({}) == 0:
-        await seed_csr_projects(database)
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    await db.close_db()
 
 
 # ══════════════════════════════════════════════════════════════════════════
