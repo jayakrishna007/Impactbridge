@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+motor
+pymongo
+pydantic
+python-multipart
+python-dotenv
+certifi
+dnspython
