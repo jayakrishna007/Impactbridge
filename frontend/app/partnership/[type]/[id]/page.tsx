@@ -110,6 +110,7 @@ export default function PartnershipPage() {
     const [mounted, setMounted] = useState(false)
     const [fullPartnership, setFullPartnership] = useState<any>(null)
     const [currentView, setCurrentView] = useState<"dashboard" | "mou">("dashboard")
+    const [docsVerified, setDocsVerified] = useState(false)
 
     /* ─── Sync from backend on mount, fall back to localStorage ─── */
     useEffect(() => {
@@ -131,13 +132,15 @@ export default function PartnershipPage() {
             setPartnershipId(p.id)
             setFunderConfirmed(p.funderConfirmed)
             setPartnerConfirmed(p.partnerConfirmed)
-            setPartnership(storageKey, { funderConfirmed: p.funderConfirmed, partnerConfirmed: p.partnerConfirmed, pship: p })
+            setPartnership(storageKey, { funderConfirmed: p.funderConfirmed, partnerConfirmed: p.partnerConfirmed, pship: p, docsVerified: getPartnership(storageKey).docsVerified })
+            setDocsVerified(!!getPartnership(storageKey).docsVerified)
         }).catch(() => {
             // Backend offline – fall back to localStorage
             const saved = getPartnership(storageKey)
             setFunderConfirmed(!!saved.funderConfirmed)
             setPartnerConfirmed(!!saved.partnerConfirmed)
             if (saved.pship) setFullPartnership(saved.pship)
+            setDocsVerified(!!saved.docsVerified)
         }).finally(() => {
             setMounted(true)
             setTimeout(() => setNotifVisible(true), 800)
@@ -553,6 +556,11 @@ export default function PartnershipPage() {
                         proposal={proposal}
                         entityLabel={entityLabel}
                         docs={docs}
+                        docsVerified={docsVerified}
+                        onVerifyDocs={() => {
+                            setDocsVerified(true)
+                            setPartnership(storageKey, { ...getPartnership(storageKey), docsVerified: true })
+                        }}
                         handleOpenMou={() => setCurrentView("mou")}
                     />
                 )}

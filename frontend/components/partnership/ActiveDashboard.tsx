@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
     CheckCircle2, ChevronRight, FileText, Send, Paperclip,
-    FileSearch, BarChart3, Clock, Lock, PenLine, FileUp, Camera, MessageSquare, Plus, Video, Activity
+    FileSearch, BarChart3, Clock, Lock, Unlock, PenLine, FileUp, Camera, MessageSquare, Plus, Video, Activity
 } from "lucide-react"
 
 export function ActiveDashboard({
@@ -16,6 +16,8 @@ export function ActiveDashboard({
     proposal,
     entityLabel,
     docs,
+    docsVerified,
+    onVerifyDocs,
     handleOpenMou
 }: {
     partnership: any,
@@ -23,6 +25,8 @@ export function ActiveDashboard({
     proposal: any,
     entityLabel: string,
     docs: any[],
+    docsVerified: boolean,
+    onVerifyDocs: () => void,
     handleOpenMou: () => void
 }) {
     const isFunder = user?.role === "funder"
@@ -61,12 +65,21 @@ export function ActiveDashboard({
                         </div>
 
                         {/* Step 3 */}
-                        <div className="flex flex-col items-center gap-2 z-10 cursor-pointer group" onClick={handleOpenMou}>
-                            <div className="h-6 w-6 rounded-full bg-white border-2 border-border group-hover:border-purple-300 ring-4 ring-white flex items-center justify-center transition-colors">
-                                <PenLine className="h-3 w-3 text-muted-foreground group-hover:text-purple-600" />
+                        {docsVerified ? (
+                            <div className="flex flex-col items-center gap-2 z-10 cursor-pointer group" onClick={handleOpenMou}>
+                                <div className="h-6 w-6 rounded-full bg-white border-2 border-border group-hover:border-purple-300 ring-4 ring-white flex items-center justify-center transition-colors">
+                                    <PenLine className="h-3 w-3 text-muted-foreground group-hover:text-purple-600" />
+                                </div>
+                                <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground">MOU Signing</span>
                             </div>
-                            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground">MOU Signing</span>
-                        </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-2 z-10 opacity-60">
+                                <div className="h-6 w-6 rounded-full bg-secondary border-2 border-border ring-4 ring-white flex items-center justify-center">
+                                    <Lock className="h-3 w-3 text-muted-foreground" />
+                                </div>
+                                <span className="text-xs font-medium text-muted-foreground">MOU Signing</span>
+                            </div>
+                        )}
 
                         {/* Step 4 */}
                         <div className="flex flex-col items-center gap-2 z-10">
@@ -170,8 +183,8 @@ export function ActiveDashboard({
                             <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground font-bold">Quick Actions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                            <Button className="w-full justify-start gap-2 bg-indigo-600 hover:bg-indigo-700 text-white" onClick={handleOpenMou}>
-                                <PenLine className="h-4 w-4" /> View / Sign MOU
+                            <Button className={`w-full justify-start gap-2 ${docsVerified ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary cursor-not-allowed'}`} disabled={!docsVerified} onClick={docsVerified ? handleOpenMou : undefined}>
+                                {docsVerified ? <PenLine className="h-4 w-4" /> : <Lock className="h-4 w-4" />} View / Sign MOU
                             </Button>
                             <Button variant="outline" className="w-full justify-start gap-2">
                                 <FileUp className="h-4 w-4 text-muted-foreground" /> Upload Document
@@ -185,44 +198,37 @@ export function ActiveDashboard({
                         </CardContent>
                     </Card>
 
-                    {/* Activity Log */}
-                    <Card className="shadow-sm">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-2">
-                                <Activity className="h-4 w-4" /> Recent Activity
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4 relative before:absolute before:inset-0 before:ml-1.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-secondary before:to-transparent">
-
-                                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                    <div className="flex items-center justify-center w-3 h-3 rounded-full bg-blue-500 border-2 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10" />
-                                    <div className="w-[calc(100%-1.5rem)] pl-3 text-xs align-baseline border-b border-border pb-3 ml-2">
-                                        <span className="font-bold text-foreground">Document Requested</span>
-                                        <p className="text-muted-foreground">FCRA Certificate requested by Funder.</p>
-                                        <span className="text-[10px] uppercase text-muted-foreground">2 hours ago</span>
-                                    </div>
-                                </div>
-
-                                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                    <div className="flex items-center justify-center w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10" />
-                                    <div className="w-[calc(100%-1.5rem)] pl-3 text-xs align-baseline border-b border-border pb-3 ml-2">
-                                        <span className="font-bold text-foreground">Initial Meeting</span>
-                                        <p className="text-muted-foreground">Virtual call skipped - proceed to doc review.</p>
-                                        <span className="text-[10px] uppercase text-muted-foreground">Yesterday</span>
-                                    </div>
-                                </div>
-
-                                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                    <div className="flex items-center justify-center w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10" />
-                                    <div className="w-[calc(100%-1.5rem)] pl-3 text-xs align-baseline ml-2">
-                                        <span className="font-bold text-foreground">Partnership Confirmed</span>
-                                        <p className="text-muted-foreground">Both parties accepted.</p>
-                                        <span className="text-[10px] uppercase text-muted-foreground">3 days ago</span>
-                                    </div>
-                                </div>
-
+                    {/* Next Stage Progression */}
+                    <Card className="shadow-sm border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+                        <CardHeader className="pb-2 text-center">
+                            <div className="mx-auto h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mb-2">
+                                {docsVerified ? <Unlock className="h-6 w-6 text-primary" /> : <Lock className="h-6 w-6 text-primary" />}
                             </div>
+                            <CardTitle className="text-xl font-bold">MOU Agreement Stage</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-center space-y-4">
+                            <p className="text-sm text-muted-foreground">
+                                {docsVerified
+                                    ? "Document verification is complete. The MOU signing stage is now unlocked."
+                                    : "Complete the ongoing document verification process to unlock the MOU Agreement stage."}
+                            </p>
+                            {!docsVerified ? (
+                                <Button
+                                    onClick={onVerifyDocs}
+                                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md"
+                                    size="lg"
+                                >
+                                    Complete Document Verification
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={handleOpenMou}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md gap-2"
+                                    size="lg"
+                                >
+                                    Proceed to MOU Agreement <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
