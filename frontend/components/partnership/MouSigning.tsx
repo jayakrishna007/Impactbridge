@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, ChevronLeft, ShieldCheck, PenLine, Download } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ShieldCheck, PenLine, Download, UploadCloud, FileUp, FileText } from "lucide-react"
 import { apiSignMou } from "@/lib/api"
 
 export function MouSigning({
@@ -34,6 +34,16 @@ export function MouSigning({
     }
 
     const [isSigning, setIsSigning] = useState(false)
+    const [mouUploaded, setMouUploaded] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
+
+    function handleUpload() {
+        setIsUploading(true)
+        setTimeout(() => {
+            setIsUploading(false)
+            setMouUploaded(true)
+        }, 1500)
+    }
 
     async function handleSign() {
         setIsSigning(true)
@@ -67,70 +77,48 @@ export function MouSigning({
             <div className="grid lg:grid-cols-3 gap-8">
                 {/* ── Left Column (MOU Document) ── */}
                 <div className="lg:col-span-2 space-y-6">
-                    <Card className="border shadow-md" style={{ background: "#fffffe" }}>
-                        <CardContent className="p-8 sm:p-12 space-y-8 font-serif">
-                            <div className="text-center space-y-2 border-b pb-6">
-                                <h2 className="text-2xl font-bold uppercase tracking-wider">Memorandum of Understanding</h2>
-                                <p className="text-sm text-muted-foreground">Dated: {new Date().toLocaleDateString()}</p>
-                            </div>
-
-                            <p className="leading-relaxed text-sm shadow-sm bg-secondary/5 p-4 rounded-md">
-                                This Memorandum of Understanding (the "MOU") is entered into by and between <strong>{partnership.funderName}</strong> (hereinafter referred to as "Funder") AND <strong>{proposalName}</strong> (hereinafter referred to as "{entityLabel}").
-                            </p>
-
-                            <div className="space-y-4">
-                                <h3 className="font-bold border-b pb-2 text-base">1. Project Scope & Objectives</h3>
-                                <p className="text-sm leading-relaxed text-muted-foreground">
-                                    The Funder agrees to provide financial support for the project titled "<strong>{proposal.title}</strong>". The {entityLabel} agrees to execute the project diligently, benefiting {proposal.beneficiaries?.toLocaleString()} individuals in {proposal.location}.
-                                </p>
-                            </div>
-
-                            <div className="space-y-4">
-                                <h3 className="font-bold border-b pb-2 text-base">2. Fund Allocation & Tranches</h3>
-                                <div className="border rounded-md overflow-hidden text-sm font-sans">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-muted">
-                                            <tr>
-                                                <th className="px-4 py-2 font-medium">Tranche</th>
-                                                <th className="px-4 py-2 font-medium">Amount</th>
-                                                <th className="px-4 py-2 font-medium">Condition for Release</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y text-muted-foreground">
-                                            <tr>
-                                                <td className="px-4 py-3">Tranche 1</td>
-                                                <td className="px-4 py-3 font-semibold text-foreground">₹50,00,000</td>
-                                                <td className="px-4 py-3">Upon signing of this MOU</td>
-                                            </tr>
-                                            <tr>
-                                                <td className="px-4 py-3">Tranche 2</td>
-                                                <td className="px-4 py-3 font-semibold text-foreground">₹75,00,000</td>
-                                                <td className="px-4 py-3">After Month 3 Progress Report Approval</td>
-                                            </tr>
-                                            <tr>
-                                                <td className="px-4 py-3">Tranche 3</td>
-                                                <td className="px-4 py-3 font-semibold text-foreground">₹75,00,000</td>
-                                                <td className="px-4 py-3">After Month 6 Impact Report Approval</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                    {!mouUploaded ? (
+                        <Card className="border border-dashed shadow-sm text-center py-20 bg-secondary/10">
+                            <CardContent className="space-y-4 flex flex-col items-center">
+                                <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                                    <FileUp className="h-8 w-8 text-blue-600" />
                                 </div>
-                                <p className="text-sm font-bold text-right pr-4">Total Committed: {proposal.fundingRequired}</p>
-                            </div>
+                                <h3 className="text-xl font-bold">Custom MOU Required</h3>
+                                <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                                    {isFunder
+                                        ? "Please upload your organization's official Memorandum of Understanding PDF for the partner to review and sign."
+                                        : "Waiting for the funder to upload their organization's official Memorandum of Understanding..."}
+                                </p>
+                                {isFunder && (
+                                    <Button onClick={handleUpload} disabled={isUploading} className="bg-blue-600 hover:bg-blue-700 mt-4 gap-2">
+                                        <UploadCloud className="h-4 w-4" />
+                                        {isUploading ? "Uploading..." : "Upload Official MOU (PDF)"}
+                                    </Button>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <Card className="border shadow-md" style={{ background: "#fffffe" }}>
+                            <CardContent className="p-8 sm:p-12 space-y-8 font-serif">
+                                <div className="text-center space-y-2 border-b pb-6">
+                                    <h2 className="text-2xl font-bold uppercase tracking-wider">Official Memorandum of Understanding</h2>
+                                    <p className="text-sm text-muted-foreground">Uploaded by {partnership.funderName} on {new Date().toLocaleDateString()}</p>
+                                </div>
 
-                            <div className="space-y-4">
-                                <h3 className="font-bold border-b pb-2 text-base">3. Reporting Obligations</h3>
-                                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-2">
-                                    <li>Submit monthly summarized field updates via the platform.</li>
-                                    <li>Submit detailed Quarterly Reports including financial statements.</li>
-                                    <li>Provide an Annual Audit Report within 60 days of project closure.</li>
-                                </ul>
-                            </div>
-                        </CardContent>
-                    </Card>
+                                <div className="bg-secondary/20 border border-border rounded-lg p-16 flex flex-col items-center justify-center text-center font-sans">
+                                    <FileText className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
+                                    <h3 className="text-lg font-bold text-foreground">mou_agreement_final.pdf</h3>
+                                    <p className="text-sm text-muted-foreground mt-2">Customized terms • {Math.floor(Math.random() * 5) + 3} Pages</p>
+                                    <Button variant="outline" className="mt-6 gap-2 border-dashed bg-white">
+                                        <Download className="h-4 w-4" /> Download to Review
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Signature Boxes */}
-                    <div className="grid sm:grid-cols-2 gap-6">
+                    <div className={`grid sm:grid-cols-2 gap-6 ${!mouUploaded ? "opacity-50 pointer-events-none grayscale" : ""}`}>
                         {/* Funder Signature */}
                         <div className={`border p-6 rounded-xl text-center space-y-4 transition-colors ${signatures.funder ? "bg-emerald-50 border-emerald-200" : "bg-card"}`}>
                             <h3 className="font-semibold text-foreground">Funder Signature</h3>

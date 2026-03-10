@@ -92,42 +92,28 @@ export function ActiveDashboard({
                 {/* ── Left Column ── */}
                 <div className="lg:col-span-2 space-y-6">
 
-                    {/* Current Step Card */}
-                    <Card className="border-l-4 border-l-blue-600 shadow-sm overflow-hidden">
-                        <CardHeader className="pb-3 bg-blue-50/50">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 mb-2">In Progress</Badge>
-                                    <CardTitle className="text-lg">Current Step: Document Verification</CardTitle>
-                                    <p className="text-sm text-muted-foreground mt-1">Reviewing submitted documents before generating the MOU.</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-sm font-bold text-foreground">4/5</p>
-                                    <p className="text-xs text-muted-foreground">Submitted</p>
-                                </div>
-                            </div>
-                            <div className="mt-3 h-2 w-full bg-secondary rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-600 rounded-full" style={{ width: "80%" }} />
-                            </div>
+                    {/* Submitted Documents Viewer */}
+                    <Card className="shadow-sm border-emerald-100 bg-white">
+                        <CardHeader className="pb-3 bg-emerald-50/50">
+                            <CardTitle className="text-sm uppercase tracking-wider text-emerald-800 font-bold flex items-center gap-2">
+                                <FileSearch className="h-4 w-4" /> Submitted Documents
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-4 grid sm:grid-cols-2 gap-4">
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between text-sm p-2 rounded-md bg-secondary/30">
-                                    <span className="flex items-center gap-2 text-foreground font-medium"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Trust Deed</span>
+                        <CardContent className="pt-4 space-y-3">
+                            {docs.map((doc: any, index: number) => (
+                                <div key={index} className="flex justify-between items-center bg-secondary/30 p-3 rounded-md border border-border">
+                                    <div className="flex gap-3 min-w-0">
+                                        <FileText className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-foreground truncate">{doc.name}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{doc.sub}</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="ghost" size="sm" className="shrink-0 h-8 gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
+                                        <ChevronRight className="h-3 w-3" /> View
+                                    </Button>
                                 </div>
-                                <div className="flex items-center justify-between text-sm p-2 rounded-md bg-secondary/30">
-                                    <span className="flex items-center gap-2 text-foreground font-medium"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Bank Details</span>
-                                </div>
-                            </div>
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between text-sm p-2 rounded-md bg-secondary/30">
-                                    <span className="flex items-center gap-2 text-foreground font-medium"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> 12A Certificate</span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm p-2 rounded-md bg-blue-50 border border-blue-100">
-                                    <span className="flex items-center gap-2 text-blue-800 font-medium"><Clock className="h-4 w-4 text-blue-500" /> FCRA Cert.</span>
-                                    <Button size="sm" className="h-6 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2">Upload</Button>
-                                </div>
-                            </div>
+                            ))}
                         </CardContent>
                     </Card>
 
@@ -196,31 +182,6 @@ export function ActiveDashboard({
                             <Button variant="outline" className="w-full justify-start gap-2">
                                 <Camera className="h-4 w-4 text-muted-foreground" /> Post Field Update
                             </Button>
-                        </CardContent>
-                    </Card>
-
-                    {/* Submitted Documents Viewer */}
-                    <Card className="shadow-sm border-emerald-100 bg-white">
-                        <CardHeader className="pb-3 bg-emerald-50/50">
-                            <CardTitle className="text-sm uppercase tracking-wider text-emerald-800 font-bold flex items-center gap-2">
-                                <FileSearch className="h-4 w-4" /> Submitted Documents
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-4 space-y-3">
-                            {docs.map((doc: any, index: number) => (
-                                <div key={index} className="flex justify-between items-center bg-secondary/30 p-3 rounded-md border border-border">
-                                    <div className="flex gap-3 min-w-0">
-                                        <FileText className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-semibold text-foreground truncate">{doc.name}</p>
-                                            <p className="text-xs text-muted-foreground truncate">{doc.sub}</p>
-                                        </div>
-                                    </div>
-                                    <Button variant="ghost" size="sm" className="shrink-0 h-8 gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
-                                        <ChevronRight className="h-3 w-3" /> View
-                                    </Button>
-                                </div>
-                            ))}
                         </CardContent>
                     </Card>
 
