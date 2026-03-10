@@ -15,12 +15,14 @@ export function ActiveDashboard({
     user,
     proposal,
     entityLabel,
+    docs,
     handleOpenMou
 }: {
     partnership: any,
     user: any,
     proposal: any,
     entityLabel: string,
+    docs: any[],
     handleOpenMou: () => void
 }) {
     const isFunder = user?.role === "funder"
@@ -51,14 +53,6 @@ export function ActiveDashboard({
                         </div>
 
                         {/* Step 2 */}
-                        <div className="flex flex-col items-center gap-2 z-10">
-                            <div className="h-6 w-6 rounded-full bg-emerald-500 ring-4 ring-white flex items-center justify-center">
-                                <CheckCircle2 className="h-4 w-4 text-white" />
-                            </div>
-                            <span className="text-xs font-medium text-emerald-700">Initial Meeting</span>
-                        </div>
-
-                        {/* Step 3 */}
                         <div className="flex flex-col items-center gap-2 z-10 w-24">
                             <div className="h-6 w-6 rounded-full bg-blue-600 ring-4 ring-blue-100 flex items-center justify-center animate-pulse shadow-[0_0_0_4px_rgba(37,99,235,0.2)]">
                                 <FileSearch className="h-3 w-3 text-white" />
@@ -66,7 +60,7 @@ export function ActiveDashboard({
                             <span className="text-xs font-bold text-blue-700 text-center leading-tight">Document Verification</span>
                         </div>
 
-                        {/* Step 4 */}
+                        {/* Step 3 */}
                         <div className="flex flex-col items-center gap-2 z-10 cursor-pointer group" onClick={handleOpenMou}>
                             <div className="h-6 w-6 rounded-full bg-white border-2 border-border group-hover:border-purple-300 ring-4 ring-white flex items-center justify-center transition-colors">
                                 <PenLine className="h-3 w-3 text-muted-foreground group-hover:text-purple-600" />
@@ -74,7 +68,7 @@ export function ActiveDashboard({
                             <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground">MOU Signing</span>
                         </div>
 
-                        {/* Step 5 */}
+                        {/* Step 4 */}
                         <div className="flex flex-col items-center gap-2 z-10">
                             <div className="h-6 w-6 rounded-full bg-white border-2 border-border ring-4 ring-white flex items-center justify-center">
                                 <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
@@ -82,12 +76,12 @@ export function ActiveDashboard({
                             <span className="text-xs font-medium text-muted-foreground">Fund Release</span>
                         </div>
 
-                        {/* Step 6 */}
+                        {/* Step 5 */}
                         <div className="flex flex-col items-center gap-2 z-10">
                             <div className="h-6 w-6 rounded-full bg-white border-2 border-border ring-4 ring-white flex items-center justify-center">
                                 <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
                             </div>
-                            <span className="text-xs font-medium text-muted-foreground">Tracking</span>
+                            <span className="text-xs font-medium text-muted-foreground">Reports Tracking</span>
                         </div>
                     </div>
                 </div>
@@ -205,36 +199,28 @@ export function ActiveDashboard({
                         </CardContent>
                     </Card>
 
-                    {/* Health Score */}
-                    <Card className="shadow-sm border-emerald-100 bg-emerald-50/30">
-                        <CardContent className="pt-6">
-                            <div className="flex flex-col items-center">
-                                <div className="relative w-24 h-24 flex items-center justify-center mb-4">
-                                    <svg className="absolute w-full h-full transform -rotate-90">
-                                        <circle cx="48" cy="48" r="44" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-emerald-100" />
-                                        <circle cx="48" cy="48" r="44" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray="276" strokeDashoffset="22" className="text-emerald-500 transition-all duration-1000 ease-out" />
-                                    </svg>
-                                    <div className="text-center">
-                                        <span className="text-2xl font-bold text-emerald-700">92</span>
+                    {/* Submitted Documents Viewer */}
+                    <Card className="shadow-sm border-emerald-100 bg-white">
+                        <CardHeader className="pb-3 bg-emerald-50/50">
+                            <CardTitle className="text-sm uppercase tracking-wider text-emerald-800 font-bold flex items-center gap-2">
+                                <FileSearch className="h-4 w-4" /> Submitted Documents
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-3">
+                            {docs.map((doc: any, index: number) => (
+                                <div key={index} className="flex justify-between items-center bg-secondary/30 p-3 rounded-md border border-border">
+                                    <div className="flex gap-3 min-w-0">
+                                        <FileText className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-foreground truncate">{doc.name}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{doc.sub}</p>
+                                        </div>
                                     </div>
+                                    <Button variant="ghost" size="sm" className="shrink-0 h-8 gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
+                                        <ChevronRight className="h-3 w-3" /> View
+                                    </Button>
                                 </div>
-                                <h3 className="font-bold text-foreground mb-1">Partnership Health</h3>
-                                <p className="text-xs text-muted-foreground text-center">Excellent responsiveness and document tracking.</p>
-                            </div>
-                            <div className="mt-5 space-y-2">
-                                <div className="flex justify-between text-xs font-medium">
-                                    <span className="text-muted-foreground">Responsiveness</span>
-                                    <span className="text-foreground">95%</span>
-                                </div>
-                                <div className="flex justify-between text-xs font-medium">
-                                    <span className="text-muted-foreground">Documents</span>
-                                    <span className="text-foreground">80%</span>
-                                </div>
-                                <div className="flex justify-between text-xs font-medium">
-                                    <span className="text-muted-foreground">Timeline</span>
-                                    <span className="text-foreground">100%</span>
-                                </div>
-                            </div>
+                            ))}
                         </CardContent>
                     </Card>
 
@@ -261,7 +247,7 @@ export function ActiveDashboard({
                                     <div className="flex items-center justify-center w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10" />
                                     <div className="w-[calc(100%-1.5rem)] pl-3 text-xs align-baseline border-b border-border pb-3 ml-2">
                                         <span className="font-bold text-foreground">Initial Meeting</span>
-                                        <p className="text-muted-foreground">Virtual call completed.</p>
+                                        <p className="text-muted-foreground">Virtual call skipped - proceed to doc review.</p>
                                         <span className="text-[10px] uppercase text-muted-foreground">Yesterday</span>
                                     </div>
                                 </div>

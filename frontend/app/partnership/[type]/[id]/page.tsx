@@ -45,25 +45,19 @@ const IND_QUICK_TAGS = ["Bank Passbook", "School Enrollment Certificate", "Caste
 /* ─── Partnership phases ─── */
 const PHASES = [
     {
-        num: "01", color: "blue", Icon: CalendarDays, title: "Initial Meeting",
-        timeline: "Within 3–5 business days",
-        desc: "Schedule a virtual or in-person meeting. Both parties discuss the project vision, approach, and outcomes — with no financial commitment yet.",
-        tags: ["Virtual Call", "Site Visit", "Q&A Session"],
-    },
-    {
-        num: "02", color: "amber", Icon: FileSearch, title: "Document Verification",
+        num: "01", color: "amber", Icon: FileSearch, title: "Document Verification",
         timeline: "1–2 weeks",
         desc: "All documents submitted at proposal creation are pre-verified by ImpactBridge. Funders may request additional documents via the platform.",
         tags: ["Pre-Verified ✓", "Platform Checked", "Due Diligence"],
     },
     {
-        num: "03", color: "purple", Icon: PenLine, title: "MOU Agreement Signing",
+        num: "02", color: "purple", Icon: PenLine, title: "MOU Agreement Signing",
         timeline: "1 week after verification",
         desc: "A Memorandum of Understanding is drafted on the platform, outlining fund allocation, milestones, and reporting obligations. Both parties sign digitally.",
         tags: ["MOU Drafting", "Digital Signature", "Tranche Release"],
     },
     {
-        num: "04", color: "emerald", Icon: BarChart3, title: "Reporting & Impact Tracking",
+        num: "03", color: "emerald", Icon: BarChart3, title: "Reporting & Impact Tracking",
         timeline: "Throughout project lifecycle",
         desc: "The NGO or beneficiary submits structured monthly, quarterly, and annual reports. Funders receive full visibility into fund utilization and community outcomes.",
         tags: ["Monthly Reports", "Quarterly Impact", "Annual Audit"],
@@ -519,7 +513,7 @@ export default function PartnershipPage() {
                                     {[
                                         { label: "Funder Confirmed", done: funderConfirmed },
                                         { label: `${entityLabel} Accepted`, done: partnerConfirmed },
-                                        { label: "Meeting Scheduled", done: false },
+                                        { label: "Document Verification", done: false },
                                         { label: "MOU Signed", done: false },
                                         { label: "Project Active (Funds Released)", done: false },
                                         { label: "Track Reports (Work Report)", done: false },
@@ -558,6 +552,7 @@ export default function PartnershipPage() {
                         user={user}
                         proposal={proposal}
                         entityLabel={entityLabel}
+                        docs={docs}
                         handleOpenMou={() => setCurrentView("mou")}
                     />
                 )}
