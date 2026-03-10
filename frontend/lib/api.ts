@@ -199,6 +199,12 @@ export interface PartnershipData {
     createdAt: string;
     funderConfirmedAt: string | null;
     partnerConfirmedAt: string | null;
+    mouSignatures?: {
+        funder: boolean;
+        partner: boolean;
+        funderSignedAt: string | null;
+        partnerSignedAt: string | null;
+    };
 }
 
 /** Create a new partnership record (or return existing one). Called when funder lands on /partnership page. */
@@ -228,6 +234,14 @@ export async function apiFunderConfirm(partnershipId: string): Promise<Partnersh
 export async function apiPartnerConfirm(partnershipId: string): Promise<PartnershipData> {
     return apiFetch<PartnershipData>(`/partnerships/${partnershipId}/partner-confirm`, {
         method: "PUT",
+    });
+}
+
+/** Sign the MOU — returns updated partnership. */
+export async function apiSignMou(partnershipId: string, role: "funder" | "partner"): Promise<PartnershipData> {
+    return apiFetch<PartnershipData>(`/partnerships/${partnershipId}/mou-sign`, {
+        method: "PUT",
+        body: JSON.stringify({ role }),
     });
 }
 

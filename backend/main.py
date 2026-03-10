@@ -143,6 +143,9 @@ class PartnershipCreate(BaseModel):
     partnerEmail:  str
     partnerName:   str
 
+class MouSignRequest(BaseModel):
+    role: str # 'funder' or 'partner'
+
 
 class NotificationCreate(BaseModel):
     recipientEmail: str
@@ -391,6 +394,12 @@ async def create_or_get_partnership(data: PartnershipCreate):
         "createdAt":        datetime.utcnow().isoformat(),
         "funderConfirmedAt":  None,
         "partnerConfirmedAt": None,
+        "mouSignatures": {
+            "funder": False,
+            "partner": False,
+            "funderSignedAt": None,
+            "partnerSignedAt": None
+        }
     }
     await col.insert_one(partnership)
 
@@ -484,6 +493,37 @@ async def get_partnership_for_proposal(proposal_type: str, proposal_id: str, fun
     if not doc:
         raise HTTPException(status_code=404, detail="Partnership not found")
     return clean(doc)
+
+@app.put("/partnerships/{partnership_id}/mou-sign")
+async def sign_partnership_mou(partnership_id: str, data: MouSignRequest):
+    """Sign the MOU for the partnership by role."""
+    database = db.get_db()
+    col = database["partnerships"]
+
+    p = await col.find_one({"id": partnership_id})
+    if not p:
+        raise HTTPException(status_code=404, detail="Partnership not found")
+        
+    mou_sigs = p.get("mouSignatures", {
+        "funder": False,
+        "partner": False,
+        "funderSignedAt": None,
+        "partnerSignedAt": None
+    })
+    
+    now = datetime.utcnow().isoformat()
+    if data.role == "funder":
+        mou_sigs["funder"] = True
+        mou_sigs["funderSignedAt"] = now
+    elif data.role == "partner":
+        mou_sigs["partner"] = True
+        mou_sigs["partnerSignedAt"] = now
+    else:
+        raise HTTPException(status_code=400, detail="Invalid role")
+
+    await col.update_one({"id": partnership_id}, {"$set": {"mouSignatures": mou_sigs}})
+    updated = await col.find_one({"id": partnership_id})
+    return clean(updated)
 
 # ══════════════════════════════════════════════════════════════════════════
 # Notifications
