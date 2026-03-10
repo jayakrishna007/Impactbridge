@@ -62,18 +62,27 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="ImpactBridge API", version="3.0.0", lifespan=lifespan)
 
 # ── CORS ───────────────────────────────────────────────────────────────────
-# Set FRONTEND_URL in Render env vars to your Vercel production URL
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+# On Render, set ALLOWED_ORIGINS to a comma-separated list of your frontend URLs.
+# Example: https://impactbridge.vercel.app,https://impactbridge-git-main.vercel.app
+# If not set, defaults to allow localhost for local dev.
+ALLOWED_ORIGINS_ENV = os.getenv("ALLOWED_ORIGINS", "")
 
 allowed_origins = [
     "http://localhost:3000",
     "http://localhost:3001",
-    FRONTEND_URL,
 ]
+
+# Add any extra origins from the env var (comma-separated)
+if ALLOWED_ORIGINS_ENV:
+    for origin in ALLOWED_ORIGINS_ENV.split(","):
+        origin = origin.strip()
+        if origin and origin not in allowed_origins:
+            allowed_origins.append(origin)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Allow all Vercel preview deployments
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

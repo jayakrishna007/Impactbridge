@@ -3,7 +3,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://impactbridge-backend.onrender.com/:path*"
+            "destination": "https://impactbridge-2.onrender.com/:path*"
         }
     ]
 }
