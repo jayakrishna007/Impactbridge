@@ -35,25 +35,35 @@ export function ActiveDashboard({
     const isFunder = user?.role === "funder"
 
     const [meetingDate, setMeetingDate] = useState("")
-    const [meetingTime, setMeetingTime] = useState("")
+    const [meetingHour, setMeetingHour] = useState("10")
+    const [meetingMin, setMeetingMin] = useState("00")
+    const [meetingAmPm, setMeetingAmPm] = useState("AM")
     const [meetingSubject, setMeetingSubject] = useState(`Intro Call - ${proposal?.title || "Partnership"}`)
     const [isMeetingDialogOpen, setIsMeetingDialogOpen] = useState(false)
 
     const handleScheduleMeeting = () => {
-        if (!meetingDate || !meetingTime || !meetingSubject) {
-            alert("Please fill in Date, Time, and Subject.")
+        if (!meetingDate || !meetingSubject) {
+            alert("Please fill in Date and Subject.")
             return
         }
 
         try {
-            const startDate = new Date(`${meetingDate}T${meetingTime}`)
+            let hour24 = parseInt(meetingHour, 10)
+            if (meetingAmPm === "PM" && hour24 !== 12) hour24 += 12
+            if (meetingAmPm === "AM" && hour24 === 12) hour24 = 0
+            const timeStr = `${hour24.toString().padStart(2, "0")}:${meetingMin}:00`
+
+            const startDate = new Date(`${meetingDate}T${timeStr}`)
             const endDate = new Date(startDate.getTime() + 45 * 60000) // 45 min duration
 
             const formatGoogleDate = (d: Date) => d.toISOString().replace(/-|:|\.\d\d\d/g, "")
 
             const details = `Meeting regarding ImpactBridge proposal: ${proposal?.title || ""}\n\nPartner: ${entityLabel}\n\nImportant: Please click "Add Google Meet video conferencing" inside Google Calendar to automatically attach a meeting link before saving.`
 
-            const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingSubject)}&dates=${formatGoogleDate(startDate)}/${formatGoogleDate(endDate)}&details=${encodeURIComponent(details)}`
+            // Autofill both Funder and NGO/Beneficiary emails
+            const guests = [partnership?.funderEmail, partnership?.partnerEmail].filter(Boolean).join(",")
+
+            const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingSubject)}&dates=${formatGoogleDate(startDate)}/${formatGoogleDate(endDate)}&details=${encodeURIComponent(details)}&add=${encodeURIComponent(guests)}`
 
             window.open(url, "_blank")
         } catch (error) {
@@ -249,7 +259,35 @@ export function ActiveDashboard({
                                             </div>
                                             <div className="space-y-2">
                                                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Time</label>
-                                                <Input type="time" value={meetingTime} onChange={e => setMeetingTime(e.target.value)} />
+                                                <div className="flex gap-2">
+                                                    <select
+                                                        className="flex h-9 w-[70px] rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                        value={meetingHour}
+                                                        onChange={e => setMeetingHour(e.target.value)}
+                                                    >
+                                                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(h => (
+                                                            <option key={h} value={h.toString().padStart(2, "0")}>{h}</option>
+                                                        ))}
+                                                    </select>
+                                                    <span className="self-center font-bold text-muted-foreground">:</span>
+                                                    <select
+                                                        className="flex h-9 w-[70px] rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                        value={meetingMin}
+                                                        onChange={e => setMeetingMin(e.target.value)}
+                                                    >
+                                                        {["00", "15", "30", "45"].map(m => (
+                                                            <option key={m} value={m}>{m}</option>
+                                                        ))}
+                                                    </select>
+                                                    <select
+                                                        className="flex h-9 w-[70px] rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                        value={meetingAmPm}
+                                                        onChange={e => setMeetingAmPm(e.target.value)}
+                                                    >
+                                                        <option value="AM">AM</option>
+                                                        <option value="PM">PM</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="pt-2">
