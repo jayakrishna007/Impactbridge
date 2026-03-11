@@ -23,6 +23,8 @@ Endpoints:
     PUT    /partnerships/{id}/partner-confirm   – Partner accepts + notify funder
     GET    /partnerships/{type}/{proposal_id}   – Get for funder+proposal
     GET    /partnerships/for-user/{email}       – All partnerships for a user
+    PUT    /partnerships/{id}/mou-upload        – Funder uploads MOU + notify partner
+    PUT    /partnerships/{id}/mou-sign          – Party signs MOU + notify other party
 
   Notifications:
     POST   /notifications                       – Create manually
@@ -394,6 +396,7 @@ async def create_or_get_partnership(data: PartnershipCreate):
         "createdAt":        datetime.utcnow().isoformat(),
         "funderConfirmedAt":  None,
         "partnerConfirmedAt": None,
+        "mouUploaded": False,
         "mouSignatures": {
             "funder": False,
             "partner": False,
@@ -494,9 +497,37 @@ async def get_partnership_for_proposal(proposal_type: str, proposal_id: str, fun
         raise HTTPException(status_code=404, detail="Partnership not found")
     return clean(doc)
 
+@app.put("/partnerships/{partnership_id}/mou-upload")
+async def upload_partnership_mou(partnership_id: str):
+    """Funder uploads the MOU (simulated). Notifies the partner."""
+    database = db.get_db()
+    col = database["partnerships"]
+
+    p = await col.find_one({"id": partnership_id})
+    if not p:
+        raise HTTPException(status_code=404, detail="Partnership not found")
+
+    await col.update_one({"id": partnership_id}, {"$set": {"mouUploaded": True}})
+    updated = await col.find_one({"id": partnership_id})
+
+    # Notify Partner that the Funder uploaded the MOU
+    if p.get("partnerEmail"):
+        await _push_notification(
+            database,
+            recipientEmail = p["partnerEmail"],
+            senderName     = p.get("funderName", "Your Funder"),
+            notif_type     = "mou_uploaded",
+            title          = "📄 MOU Agreement Ready for Review",
+            message        = f"{p.get('funderName', 'The funder')} has uploaded the official MOU for \"{p.get('proposalTitle', 'the proposal')}\". Please review the terms, accept the conditions, and digitally sign it.",
+            linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}",
+            linkLabel      = "Review and Sign MOU",
+        )
+
+    return clean(updated)
+
 @app.put("/partnerships/{partnership_id}/mou-sign")
 async def sign_partnership_mou(partnership_id: str, data: MouSignRequest):
-    """Sign the MOU for the partnership by role."""
+    """Sign the MOU for the partnership by role. Notifies the other party."""
     database = db.get_db()
     col = database["partnerships"]
 
@@ -515,9 +546,36 @@ async def sign_partnership_mou(partnership_id: str, data: MouSignRequest):
     if data.role == "funder":
         mou_sigs["funder"] = True
         mou_sigs["funderSignedAt"] = now
+        
+        # Notify Partner that Funder signed
+        if p.get("partnerEmail"):
+            await _push_notification(
+                database,
+                recipientEmail = p["partnerEmail"],
+                senderName     = p.get("funderName", "Your Funder"),
+                notif_type     = "mou_signed",
+                title          = "✍️ MOU Signed by Funder",
+                message        = f"{p.get('funderName', 'The funder')} has digitally signed the MOU for \"{p.get('proposalTitle', 'the proposal')}\".",
+                linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}",
+                linkLabel      = "View Signed MOU",
+            )
+            
     elif data.role == "partner":
         mou_sigs["partner"] = True
         mou_sigs["partnerSignedAt"] = now
+        
+        # Notify Funder that Partner signed
+        if p.get("funderEmail"):
+            await _push_notification(
+                database,
+                recipientEmail = p["funderEmail"],
+                senderName     = p.get("partnerName", "Your Partner"),
+                notif_type     = "mou_signed",
+                title          = "✍️ MOU Signed by Partner",
+                message        = f"{p.get('partnerName', 'The partner')} has reviewed and digitally signed the MOU for \"{p.get('proposalTitle', 'the proposal')}\".",
+                linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}",
+                linkLabel      = "View Signed MOU",
+            )
     else:
         raise HTTPException(status_code=400, detail="Invalid role")
 

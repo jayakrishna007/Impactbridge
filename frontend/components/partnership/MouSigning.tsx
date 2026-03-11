@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, ChevronLeft, ShieldCheck, PenLine, Download, UploadCloud, FileUp, FileText, AlertCircle } from "lucide-react"
-import { apiSignMou } from "@/lib/api"
+import { apiSignMou, apiUploadMou } from "@/lib/api"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 
@@ -35,20 +35,25 @@ export function MouSigning({
         partnerSignedAt: null
     }
 
+    const mouUploaded = partnership?.mouUploaded || false
+
     const [isSigning, setIsSigning] = useState(false)
-    const [mouUploaded, setMouUploaded] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
     const [agreedTerms, setAgreedTerms] = useState(false)
     const [agreedUnderstood, setAgreedUnderstood] = useState(false)
 
     const canProceed = agreedTerms && agreedUnderstood
 
-    function handleUpload() {
+    async function handleUpload() {
         setIsUploading(true)
-        setTimeout(() => {
+        try {
+            const updated = await apiUploadMou(partnership.id)
+            updatePartnership(updated)
+        } catch (e) {
+            console.error("Upload failed", e)
+        } finally {
             setIsUploading(false)
-            setMouUploaded(true)
-        }, 1500)
+        }
     }
 
     async function handleSign() {

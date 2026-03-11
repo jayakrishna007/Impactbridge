@@ -245,6 +245,13 @@ export async function apiSignMou(partnershipId: string, role: "funder" | "partne
     });
 }
 
+/** Upload the customized MOU — returns updated partnership. */
+export async function apiUploadMou(partnershipId: string): Promise<PartnershipData> {
+    return apiFetch<PartnershipData>(`/partnerships/${partnershipId}/mou-upload`, {
+        method: "PUT",
+    });
+}
+
 /** Get a specific partnership between funder + proposal. */
 export async function apiGetPartnership(
     proposalType: string,
