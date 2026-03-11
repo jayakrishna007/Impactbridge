@@ -4,8 +4,10 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, ChevronLeft, ShieldCheck, PenLine, Download, UploadCloud, FileUp, FileText } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ShieldCheck, PenLine, Download, UploadCloud, FileUp, FileText, AlertCircle } from "lucide-react"
 import { apiSignMou } from "@/lib/api"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 
 export function MouSigning({
     partnership,
@@ -36,6 +38,10 @@ export function MouSigning({
     const [isSigning, setIsSigning] = useState(false)
     const [mouUploaded, setMouUploaded] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
+    const [agreedTerms, setAgreedTerms] = useState(false)
+    const [agreedUnderstood, setAgreedUnderstood] = useState(false)
+
+    const canProceed = agreedTerms && agreedUnderstood
 
     function handleUpload() {
         setIsUploading(true)
@@ -90,10 +96,17 @@ export function MouSigning({
                                         : "Waiting for the funder to upload their organization's official Memorandum of Understanding..."}
                                 </p>
                                 {isFunder && (
-                                    <Button onClick={handleUpload} disabled={isUploading} className="bg-blue-600 hover:bg-blue-700 mt-4 gap-2">
-                                        <UploadCloud className="h-4 w-4" />
-                                        {isUploading ? "Uploading..." : "Upload Official MOU (PDF)"}
-                                    </Button>
+                                    <div className="mt-4 flex flex-col items-center">
+                                        {!canProceed && (
+                                            <p className="text-xs text-amber-600 mb-3 font-medium flex items-center gap-1.5">
+                                                <AlertCircle className="h-3.5 w-3.5" /> Please check the agreements below to upload.
+                                            </p>
+                                        )}
+                                        <Button onClick={handleUpload} disabled={isUploading || !canProceed} className="bg-blue-600 hover:bg-blue-700 gap-2">
+                                            <UploadCloud className="h-4 w-4" />
+                                            {isUploading ? "Uploading..." : "Upload Official MOU (PDF)"}
+                                        </Button>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
@@ -117,8 +130,37 @@ export function MouSigning({
                         </Card>
                     )}
 
+                    {/* Checkboxes for Terms & Understanding */}
+                    <div className="bg-white border rounded-xl p-5 space-y-4 shadow-sm">
+                        <h3 className="text-sm font-bold text-foreground">Required Acknowledgements</h3>
+                        <div className="space-y-3">
+                            <div className="flex items-start space-x-3">
+                                <Checkbox
+                                    id="terms"
+                                    checked={agreedTerms}
+                                    onCheckedChange={(checked) => setAgreedTerms(checked === true)}
+                                    className="mt-1"
+                                />
+                                <Label htmlFor="terms" className="text-sm font-medium leading-tight text-muted-foreground cursor-pointer">
+                                    I have read and agree to the <span className="text-primary font-bold">Terms and Conditions</span>.
+                                </Label>
+                            </div>
+                            <div className="flex items-start space-x-3">
+                                <Checkbox
+                                    id="understood"
+                                    checked={agreedUnderstood}
+                                    onCheckedChange={(checked) => setAgreedUnderstood(checked === true)}
+                                    className="mt-1"
+                                />
+                                <Label htmlFor="understood" className="text-sm font-medium leading-tight text-muted-foreground cursor-pointer">
+                                    I understand that this is a legally binding agreement governing the release of funds and reporting obligations.
+                                </Label>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Signature Boxes */}
-                    <div className={`grid sm:grid-cols-2 gap-6 ${!mouUploaded ? "opacity-50 pointer-events-none grayscale" : ""}`}>
+                    <div className={`grid sm:grid-cols-2 gap-6 ${(!mouUploaded) ? "opacity-50 pointer-events-none grayscale" : ""}`}>
                         {/* Funder Signature */}
                         <div className={`border p-6 rounded-xl text-center space-y-4 transition-colors ${signatures.funder ? "bg-emerald-50 border-emerald-200" : "bg-card"}`}>
                             <h3 className="font-semibold text-foreground">Funder Signature</h3>
@@ -133,9 +175,14 @@ export function MouSigning({
                                     <div className="h-16 w-full border-b border-dashed border-border" />
                                     <p className="text-xs text-muted-foreground">Awaiting Signature</p>
                                     {isFunder && (
-                                        <Button className="w-full bg-blue-600 hover:bg-blue-700 mt-2" onClick={handleSign} disabled={isSigning} gap-2>
-                                            <PenLine className="h-4 w-4 mr-2" /> Sign Agreement
-                                        </Button>
+                                        <div className="mt-2">
+                                            {!canProceed && (
+                                                <p className="text-[10px] text-amber-600 mb-2 font-medium">Accept required terms above to sign.</p>
+                                            )}
+                                            <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleSign} disabled={isSigning || !canProceed} gap-2>
+                                                <PenLine className="h-4 w-4 mr-2" /> Sign Agreement
+                                            </Button>
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -155,9 +202,14 @@ export function MouSigning({
                                     <div className="h-16 w-full border-b border-dashed border-border" />
                                     <p className="text-xs text-muted-foreground">Awaiting Signature</p>
                                     {!isFunder && (
-                                        <Button className="w-full bg-blue-600 hover:bg-blue-700 mt-2" onClick={handleSign} disabled={isSigning} gap-2>
-                                            <PenLine className="h-4 w-4 mr-2" /> Sign Agreement
-                                        </Button>
+                                        <div className="mt-2">
+                                            {!canProceed && (
+                                                <p className="text-[10px] text-amber-600 mb-2 font-medium">Accept required terms above to sign.</p>
+                                            )}
+                                            <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleSign} disabled={isSigning || !canProceed} gap-2>
+                                                <PenLine className="h-4 w-4 mr-2" /> Sign Agreement
+                                            </Button>
+                                        </div>
                                     )}
                                 </div>
                             )}
