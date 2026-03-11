@@ -102,12 +102,7 @@ export function MouSigning({
                                 </p>
                                 {isFunder && (
                                     <div className="mt-4 flex flex-col items-center">
-                                        {!canProceed && (
-                                            <p className="text-xs text-amber-600 mb-3 font-medium flex items-center gap-1.5">
-                                                <AlertCircle className="h-3.5 w-3.5" /> Please check the agreements below to upload.
-                                            </p>
-                                        )}
-                                        <Button onClick={handleUpload} disabled={isUploading || !canProceed} className="bg-blue-600 hover:bg-blue-700 gap-2">
+                                        <Button onClick={handleUpload} disabled={isUploading} className="bg-blue-600 hover:bg-blue-700 gap-2">
                                             <UploadCloud className="h-4 w-4" />
                                             {isUploading ? "Uploading..." : "Upload Official MOU (PDF)"}
                                         </Button>
@@ -136,7 +131,7 @@ export function MouSigning({
                     )}
 
                     {/* Checkboxes for Terms & Understanding */}
-                    <div className="bg-white border rounded-xl p-5 space-y-4 shadow-sm">
+                    <div className={`bg-white border rounded-xl p-5 space-y-4 shadow-sm ${!mouUploaded ? "opacity-50 pointer-events-none grayscale" : ""}`}>
                         <h3 className="text-sm font-bold text-foreground">Required Acknowledgements</h3>
                         <div className="space-y-3">
                             <div className="flex items-start space-x-3">
@@ -180,13 +175,23 @@ export function MouSigning({
                                     <div className="h-16 w-full border-b border-dashed border-border" />
                                     <p className="text-xs text-muted-foreground">Awaiting Signature</p>
                                     {isFunder && (
-                                        <div className="mt-2">
-                                            {!canProceed && (
-                                                <p className="text-[10px] text-amber-600 mb-2 font-medium">Accept required terms above to sign.</p>
+                                        <div className="mt-2 text-center">
+                                            {!signatures.partner ? (
+                                                <p className="text-sm text-amber-600 mb-2 font-bold bg-amber-50 px-3 py-2 rounded-md border border-amber-200">
+                                                    Waiting for {entityLabel} to sign first.
+                                                </p>
+                                            ) : (
+                                                <>
+                                                    {!canProceed && (
+                                                        <p className="text-[10px] text-amber-600 mb-2 font-medium flex items-center justify-center gap-1.5">
+                                                            <AlertCircle className="h-3 w-3" /> Accept required terms above to sign.
+                                                        </p>
+                                                    )}
+                                                    <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold h-10 gap-2" onClick={handleSign} disabled={isSigning || !canProceed}>
+                                                        <PenLine className="h-4 w-4" /> Sign Agreement
+                                                    </Button>
+                                                </>
                                             )}
-                                            <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleSign} disabled={isSigning || !canProceed} gap-2>
-                                                <PenLine className="h-4 w-4 mr-2" /> Sign Agreement
-                                            </Button>
                                         </div>
                                     )}
                                 </div>
@@ -207,12 +212,14 @@ export function MouSigning({
                                     <div className="h-16 w-full border-b border-dashed border-border" />
                                     <p className="text-xs text-muted-foreground">Awaiting Signature</p>
                                     {!isFunder && (
-                                        <div className="mt-2">
+                                        <div className="mt-2 text-center">
                                             {!canProceed && (
-                                                <p className="text-[10px] text-amber-600 mb-2 font-medium">Accept required terms above to sign.</p>
+                                                <p className="text-[10px] text-amber-600 mb-2 font-medium flex items-center justify-center gap-1.5">
+                                                    <AlertCircle className="h-3 w-3" /> Accept required terms above to sign.
+                                                </p>
                                             )}
-                                            <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleSign} disabled={isSigning || !canProceed} gap-2>
-                                                <PenLine className="h-4 w-4 mr-2" /> Sign Agreement
+                                            <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold h-10 gap-2" onClick={handleSign} disabled={isSigning || !canProceed}>
+                                                <PenLine className="h-4 w-4" /> Sign Agreement
                                             </Button>
                                         </div>
                                     )}
