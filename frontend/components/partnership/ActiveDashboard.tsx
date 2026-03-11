@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
+    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog"
+import {
     CheckCircle2, ChevronRight, FileText, Send, Paperclip,
     FileSearch, BarChart3, Clock, Lock, Unlock, PenLine, FileUp, Camera, MessageSquare, Plus, Video, Activity
 } from "lucide-react"
@@ -30,6 +33,33 @@ export function ActiveDashboard({
     handleOpenMou: () => void
 }) {
     const isFunder = user?.role === "funder"
+
+    const [meetingDate, setMeetingDate] = useState("")
+    const [meetingTime, setMeetingTime] = useState("")
+    const [meetingSubject, setMeetingSubject] = useState(`Intro Call - ${proposal?.title || "Partnership"}`)
+    const [isMeetingDialogOpen, setIsMeetingDialogOpen] = useState(false)
+
+    const handleScheduleMeeting = () => {
+        if (!meetingDate || !meetingTime || !meetingSubject) {
+            alert("Please fill in Date, Time, and Subject.")
+            return
+        }
+
+        try {
+            const startDate = new Date(`${meetingDate}T${meetingTime}`)
+            const endDate = new Date(startDate.getTime() + 45 * 60000) // 45 min duration
+
+            const formatGoogleDate = (d: Date) => d.toISOString().replace(/-|:|\.\d\d\d/g, "")
+
+            const details = `Meeting regarding ImpactBridge proposal: ${proposal?.title || ""}\n\nPartner: ${entityLabel}\n\nImportant: Please click "Add Google Meet video conferencing" inside Google Calendar to automatically attach a meeting link before saving.`
+
+            const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meetingSubject)}&dates=${formatGoogleDate(startDate)}/${formatGoogleDate(endDate)}&details=${encodeURIComponent(details)}`
+
+            window.open(url, "_blank")
+        } catch (error) {
+            alert("Invalid date or time.")
+        }
+    }
 
     return (
         <div className="mx-auto max-w-5xl px-6 pt-8 pb-16 space-y-8 animate-in fade-in duration-500">
@@ -189,9 +219,50 @@ export function ActiveDashboard({
                             <Button variant="outline" className="w-full justify-start gap-2">
                                 <FileUp className="h-4 w-4 text-muted-foreground" /> Upload Document
                             </Button>
-                            <Button variant="outline" className="w-full justify-start gap-2">
-                                <Video className="h-4 w-4 text-muted-foreground" /> Schedule Meeting
-                            </Button>
+                            <Dialog open={isMeetingDialogOpen} onOpenChange={setIsMeetingDialogOpen}>
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start gap-2 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                                    onClick={() => setIsMeetingDialogOpen(true)}
+                                >
+                                    <Video className="h-4 w-4 text-blue-600" /> Schedule Meeting
+                                </Button>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 mb-3">
+                                            <Video className="h-5 w-5 text-blue-600" />
+                                        </div>
+                                        <DialogTitle className="text-center">Schedule Google Meet</DialogTitle>
+                                        <DialogDescription className="text-center">
+                                            Pick a time to generate a Google Calendar event.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 mt-2">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Meeting Subject</label>
+                                            <Input value={meetingSubject} onChange={e => setMeetingSubject(e.target.value)} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</label>
+                                                <Input type="date" value={meetingDate} onChange={e => setMeetingDate(e.target.value)} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Time</label>
+                                                <Input type="time" value={meetingTime} onChange={e => setMeetingTime(e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div className="pt-2">
+                                            <Button className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold" onClick={handleScheduleMeeting}>
+                                                <Video className="h-4 w-4" /> Open in Google Calendar
+                                            </Button>
+                                            <p className="text-[10px] text-center text-muted-foreground mt-3 leading-relaxed">
+                                                Make sure to click <strong className="text-primary font-bold">"Add Google Meet video conferencing"</strong> in Calendar before saving to generate the video link!
+                                            </p>
+                                        </div>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
                             <Button variant="outline" className="w-full justify-start gap-2">
                                 <Camera className="h-4 w-4 text-muted-foreground" /> Post Field Update
                             </Button>
