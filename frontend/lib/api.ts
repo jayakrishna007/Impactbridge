@@ -199,12 +199,21 @@ export interface PartnershipData {
     createdAt: string;
     funderConfirmedAt: string | null;
     partnerConfirmedAt: string | null;
+    docsVerified: boolean;
+    mouUploaded: boolean;
     mouSignatures?: {
         funder: boolean;
         partner: boolean;
         funderSignedAt: string | null;
         partnerSignedAt: string | null;
     };
+    messages?: Array<{
+        sender: string;
+        name: string;
+        initials: string;
+        text: string;
+        time: string;
+    }>;
 }
 
 /** Create a new partnership record (or return existing one). Called when funder lands on /partnership page. */
@@ -249,6 +258,27 @@ export async function apiSignMou(partnershipId: string, role: "funder" | "partne
 export async function apiUploadMou(partnershipId: string): Promise<PartnershipData> {
     return apiFetch<PartnershipData>(`/partnerships/${partnershipId}/mou-upload`, {
         method: "PUT",
+    });
+}
+
+/** Verify documents for a partnership. */
+export async function apiVerifyDocs(partnershipId: string): Promise<PartnershipData> {
+    return apiFetch<PartnershipData>(`/partnerships/${partnershipId}/verify-docs`, {
+        method: "PUT",
+    });
+}
+
+/** Send a chat message. */
+export async function apiSendChat(partnershipId: string, message: {
+    sender: string;
+    name: string;
+    initials: string;
+    text: string;
+    time: string;
+}): Promise<PartnershipData> {
+    return apiFetch<PartnershipData>(`/partnerships/${partnershipId}/chat`, {
+        method: "POST",
+        body: JSON.stringify(message),
     });
 }
 

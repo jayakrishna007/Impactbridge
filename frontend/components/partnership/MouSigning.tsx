@@ -133,7 +133,9 @@ export function MouSigning({
                             <CardContent className="p-8 sm:p-12 space-y-8 font-serif">
                                 <div className="text-center space-y-2 border-b pb-6">
                                     <h2 className="text-2xl font-bold uppercase tracking-wider">Official Memorandum of Understanding</h2>
-                                    <p className="text-sm text-muted-foreground">Uploaded by {partnership.funderName} on {new Date().toLocaleDateString()}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Uploaded by {partnership.funderName} on {partnership.mouUploadedAt ? new Date(partnership.mouUploadedAt).toLocaleDateString() : new Date().toLocaleDateString()}
+                                    </p>
                                 </div>
 
                                 <div className="bg-secondary/20 border border-border rounded-lg p-16 flex flex-col items-center justify-center text-center font-sans">

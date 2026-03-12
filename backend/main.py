@@ -158,6 +158,13 @@ class NotificationCreate(BaseModel):
     linkHref:       Optional[str] = None
     linkLabel:      Optional[str] = None
 
+class ChatMessage(BaseModel):
+    sender: str  # 'funder' or 'partner'
+    name: str
+    initials: str
+    text: str
+    time: str
+
 
 # ══════════════════════════════════════════════════════════════════════════
 # Helper
@@ -396,13 +403,30 @@ async def create_or_get_partnership(data: PartnershipCreate):
         "createdAt":        datetime.utcnow().isoformat(),
         "funderConfirmedAt":  None,
         "partnerConfirmedAt": None,
+        "docsVerified": False,
         "mouUploaded": False,
         "mouSignatures": {
             "funder": False,
             "partner": False,
             "funderSignedAt": None,
             "partnerSignedAt": None
-        }
+        },
+        "messages": [
+            {
+                "sender": "funder",
+                "name": data.funderName,
+                "initials": data.funderName[0].upper() if data.funderName else "F",
+                "text": "We've reviewed your trust deed. Looks great. Could you also share the FCRA certificate to proceed with the MOU?",
+                "time": "10:30 AM",
+            },
+            {
+                "sender": "partner",
+                "name": data.partnerName,
+                "initials": data.partnerName[0].upper() if data.partnerName else "P",
+                "text": "Sure! Uploading it right now to the portal.",
+                "time": "11:15 AM",
+            }
+        ]
     }
     await col.insert_one(partnership)
 
@@ -580,6 +604,39 @@ async def sign_partnership_mou(partnership_id: str, data: MouSignRequest):
         raise HTTPException(status_code=400, detail="Invalid role")
 
     await col.update_one({"id": partnership_id}, {"$set": {"mouSignatures": mou_sigs}})
+    updated = await col.find_one({"id": partnership_id})
+    return clean(updated)
+
+@app.put("/partnerships/{partnership_id}/verify-docs")
+async def verify_partnership_docs(partnership_id: str):
+    """Mark documents as verified for this partnership."""
+    database = db.get_db()
+    col = database["partnerships"]
+
+    p = await col.find_one({"id": partnership_id})
+    if not p:
+        raise HTTPException(status_code=404, detail="Partnership not found")
+
+    await col.update_one({"id": partnership_id}, {"$set": {"docsVerified": True}})
+    updated = await col.find_one({"id": partnership_id})
+    return clean(updated)
+
+@app.post("/partnerships/{partnership_id}/chat")
+async def add_partnership_chat(partnership_id: str, message: ChatMessage):
+    """Add a message to the partnership chat history."""
+    database = db.get_db()
+    col = database["partnerships"]
+
+    p = await col.find_one({"id": partnership_id})
+    if not p:
+        raise HTTPException(status_code=404, detail="Partnership not found")
+
+    new_msg = message.model_dump()
+    await col.update_one(
+        {"id": partnership_id},
+        {"$push": {"messages": new_msg}}
+    )
+    
     updated = await col.find_one({"id": partnership_id})
     return clean(updated)
 

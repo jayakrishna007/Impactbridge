@@ -21,6 +21,7 @@ export function ActiveDashboard({
     docs,
     docsVerified,
     onVerifyDocs,
+    onSendMessage,
     handleOpenMou
 }: {
     partnership: any,
@@ -30,6 +31,7 @@ export function ActiveDashboard({
     docs: any[],
     docsVerified: boolean,
     onVerifyDocs: () => void,
+    onSendMessage: (msg: any) => void,
     handleOpenMou: () => void
 }) {
     const isFunder = user?.role === "funder"
@@ -42,26 +44,8 @@ export function ActiveDashboard({
     const [isMeetingDialogOpen, setIsMeetingDialogOpen] = useState(false)
     const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false)
 
-    // Chat State
-    const initialMessages = [
-        {
-            id: 1,
-            sender: "funder",
-            name: partnership?.funderName || "Funder",
-            initials: (partnership?.funderName?.[0] || "F").toUpperCase(),
-            text: "We've reviewed your trust deed. Looks great. Could you also share the FCRA certificate to proceed with the MOU?",
-            time: "10:30 AM",
-        },
-        {
-            id: 2,
-            sender: "partner",
-            name: partnership?.partnerName || "Partner",
-            initials: (partnership?.partnerName?.[0] || "P").toUpperCase(),
-            text: "Sure! Uploading it right now to the portal.",
-            time: "11:15 AM",
-        }
-    ]
-    const [messages, setMessages] = useState(initialMessages)
+    // Chat State sync
+    const messages = partnership?.messages || []
     const [newMessage, setNewMessage] = useState("")
     const chatEndRef = React.useRef<HTMLDivElement>(null)
 
@@ -78,15 +62,14 @@ export function ActiveDashboard({
         const senderName = isFunder ? (partnership?.funderName || "Funder") : (partnership?.partnerName || "Partner")
         
         const newMsg = {
-            id: Date.now(),
             sender: senderRole,
             name: senderName,
-            initials: senderName[0].toUpperCase(),
+            initials: (senderName[0] || "U").toUpperCase(),
             text: newMessage,
             time: `${hour}:${minute} ${ampm}`,
         }
 
-        setMessages([...messages, newMsg])
+        onSendMessage(newMsg)
         setNewMessage("")
         
         setTimeout(() => {
@@ -239,11 +222,11 @@ export function ActiveDashboard({
                         </CardHeader>
                         <CardContent className="flex-1 p-0 flex flex-col">
                             <div className="flex-1 p-5 space-y-5 overflow-y-auto bg-slate-50/50">
-                                {messages.map((msg) => {
+                                {messages.map((msg: any, idx: number) => {
                                     const isSelf = isFunder ? msg.sender === "funder" : msg.sender === "partner"
                                     
                                     return isSelf ? (
-                                        <div key={msg.id} className="flex gap-4 max-w-[85%] self-end flex-row-reverse ml-auto">
+                                        <div key={idx} className="flex gap-4 max-w-[85%] self-end flex-row-reverse ml-auto">
                                             <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                                                 <span className="text-sm font-bold text-emerald-700">{msg.initials}</span>
                                             </div>
@@ -254,7 +237,7 @@ export function ActiveDashboard({
                                             </div>
                                         </div>
                                     ) : (
-                                        <div key={msg.id} className="flex gap-4 max-w-[85%]">
+                                        <div key={idx} className="flex gap-4 max-w-[85%]">
                                             <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                                                 <span className="text-sm font-bold text-blue-700">{msg.initials}</span>
                                             </div>

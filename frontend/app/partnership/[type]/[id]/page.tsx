@@ -20,7 +20,10 @@ import { useState, useEffect } from "react"
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog"
-import { apiCreatePartnership, apiFunderConfirm, apiPartnerConfirm } from "@/lib/api"
+import { 
+    apiCreatePartnership, apiFunderConfirm, apiPartnerConfirm, 
+    apiVerifyDocs, apiSendChat 
+} from "@/lib/api"
 import { ActiveDashboard } from "@/components/partnership/ActiveDashboard"
 import { MouSigning } from "@/components/partnership/MouSigning"
 
@@ -132,8 +135,14 @@ export default function PartnershipPage() {
             setPartnershipId(p.id)
             setFunderConfirmed(p.funderConfirmed)
             setPartnerConfirmed(p.partnerConfirmed)
-            setPartnership(storageKey, { funderConfirmed: p.funderConfirmed, partnerConfirmed: p.partnerConfirmed, pship: p, docsVerified: getPartnership(storageKey).docsVerified })
-            setDocsVerified(!!getPartnership(storageKey).docsVerified)
+            setDocsVerified(!!p.docsVerified)
+            // Still sync to localStorage as a cache/fallback
+            setPartnership(storageKey, { 
+                funderConfirmed: p.funderConfirmed, 
+                partnerConfirmed: p.partnerConfirmed, 
+                pship: p, 
+                docsVerified: p.docsVerified 
+            })
         }).catch(() => {
             // Backend offline – fall back to localStorage
             const saved = getPartnership(storageKey)
@@ -175,6 +184,31 @@ export default function PartnershipPage() {
         const updated = { ...getPartnership(storageKey), partnerConfirmed: true }
         setPartnership(storageKey, updated)
         setPartnerConfirmed(true)
+    }
+
+    async function handleVerifyDocs() {
+        if (partnershipId) {
+            try {
+                const updated = await apiVerifyDocs(partnershipId)
+                setFullPartnership(updated)
+                setDocsVerified(true)
+            } catch (error) {
+                console.error("Verification failed", error)
+            }
+        }
+        setDocsVerified(true)
+        setPartnership(storageKey, { ...getPartnership(storageKey), docsVerified: true })
+    }
+
+    async function handleSendMessage(msg: any) {
+        if (partnershipId) {
+            try {
+                const updated = await apiSendChat(partnershipId, msg)
+                setFullPartnership(updated)
+            } catch (error) {
+                console.error("Chat sync failed", error)
+            }
+        }
     }
 
     if (!proposal) {
@@ -557,10 +591,8 @@ export default function PartnershipPage() {
                         entityLabel={entityLabel}
                         docs={docs}
                         docsVerified={docsVerified}
-                        onVerifyDocs={() => {
-                            setDocsVerified(true)
-                            setPartnership(storageKey, { ...getPartnership(storageKey), docsVerified: true })
-                        }}
+                        onVerifyDocs={handleVerifyDocs}
+                        onSendMessage={handleSendMessage}
                         handleOpenMou={() => setCurrentView("mou")}
                     />
                 )}
