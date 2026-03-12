@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -40,6 +40,65 @@ export function ActiveDashboard({
     const [meetingAmPm, setMeetingAmPm] = useState("AM")
     const [meetingSubject, setMeetingSubject] = useState(`Intro Call - ${proposal?.title || "Partnership"}`)
     const [isMeetingDialogOpen, setIsMeetingDialogOpen] = useState(false)
+    const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false)
+
+    // Chat State
+    const initialMessages = [
+        {
+            id: 1,
+            sender: "funder",
+            name: partnership?.funderName || "Funder",
+            initials: (partnership?.funderName?.[0] || "F").toUpperCase(),
+            text: "We've reviewed your trust deed. Looks great. Could you also share the FCRA certificate to proceed with the MOU?",
+            time: "10:30 AM",
+        },
+        {
+            id: 2,
+            sender: "partner",
+            name: partnership?.partnerName || "Partner",
+            initials: (partnership?.partnerName?.[0] || "P").toUpperCase(),
+            text: "Sure! Uploading it right now to the portal.",
+            time: "11:15 AM",
+        }
+    ]
+    const [messages, setMessages] = useState(initialMessages)
+    const [newMessage, setNewMessage] = useState("")
+    const chatEndRef = React.useRef<HTMLDivElement>(null)
+
+    const handleSendMessage = () => {
+        if (!newMessage.trim()) return
+
+        const now = new Date()
+        let hour = now.getHours()
+        const ampm = hour >= 12 ? 'PM' : 'AM'
+        hour = hour % 12 || 12
+        const minute = now.getMinutes().toString().padStart(2, '0')
+
+        const senderRole = isFunder ? "funder" : "partner"
+        const senderName = isFunder ? (partnership?.funderName || "Funder") : (partnership?.partnerName || "Partner")
+        
+        const newMsg = {
+            id: Date.now(),
+            sender: senderRole,
+            name: senderName,
+            initials: senderName[0].toUpperCase(),
+            text: newMessage,
+            time: `${hour}:${minute} ${ampm}`,
+        }
+
+        setMessages([...messages, newMsg])
+        setNewMessage("")
+        
+        setTimeout(() => {
+            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSendMessage()
+        }
+    }
 
     const handleScheduleMeeting = () => {
         if (!meetingDate || !meetingSubject) {
@@ -180,34 +239,48 @@ export function ActiveDashboard({
                         </CardHeader>
                         <CardContent className="flex-1 p-0 flex flex-col">
                             <div className="flex-1 p-5 space-y-5 overflow-y-auto bg-slate-50/50">
-                                {/* Funder Message */}
-                                <div className="flex gap-4 max-w-[85%]">
-                                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                                        <span className="text-sm font-bold text-blue-700">TT</span>
-                                    </div>
-                                    <div className="bg-white border rounded-2xl rounded-tl-sm px-5 py-3 shadow-sm">
-                                        <p className="text-sm font-bold text-muted-foreground mb-1">Tata Trusts • {isFunder ? "You" : "Funder"}</p>
-                                        <p className="text-base text-foreground space-y-1">We've reviewed your trust deed. Looks great. Could you also share the FCRA certificate to proceed with the MOU?</p>
-                                        <p className="text-xs font-semibold text-muted-foreground text-right mt-2">10:30 AM</p>
-                                    </div>
-                                </div>
-                                {/* Partner Message */}
-                                <div className="flex gap-4 max-w-[85%] self-end flex-row-reverse ml-auto">
-                                    <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                                        <span className="text-sm font-bold text-emerald-700">JK</span>
-                                    </div>
-                                    <div className="bg-primary text-primary-foreground border-primary rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm">
-                                        <p className="text-sm font-bold text-primary-foreground/80 mb-1">Jaya Krishna • {!isFunder ? "You" : "NGO"}</p>
-                                        <p className="text-base text-white font-medium">Sure! Uploading it right now to the portal.</p>
-                                        <p className="text-xs font-semibold text-primary-foreground/80 text-right mt-2">11:15 AM</p>
-                                    </div>
-                                </div>
+                                {messages.map((msg) => {
+                                    const isSelf = isFunder ? msg.sender === "funder" : msg.sender === "partner"
+                                    
+                                    return isSelf ? (
+                                        <div key={msg.id} className="flex gap-4 max-w-[85%] self-end flex-row-reverse ml-auto">
+                                            <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                                <span className="text-sm font-bold text-emerald-700">{msg.initials}</span>
+                                            </div>
+                                            <div className="bg-primary text-primary-foreground border-primary rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm">
+                                                <p className="text-sm font-bold text-primary-foreground/80 mb-1">{msg.name} • You</p>
+                                                <p className="text-base text-white font-medium break-words">{msg.text}</p>
+                                                <p className="text-xs font-semibold text-primary-foreground/80 text-right mt-2">{msg.time}</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div key={msg.id} className="flex gap-4 max-w-[85%]">
+                                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                                <span className="text-sm font-bold text-blue-700">{msg.initials}</span>
+                                            </div>
+                                            <div className="bg-white border rounded-2xl rounded-tl-sm px-5 py-3 shadow-sm">
+                                                <p className="text-sm font-bold text-muted-foreground mb-1">{msg.name} • {msg.sender === "funder" ? "Funder" : "Partner"}</p>
+                                                <p className="text-base text-foreground space-y-1 break-words">{msg.text}</p>
+                                                <p className="text-xs font-semibold text-muted-foreground text-right mt-2">{msg.time}</p>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                                <div ref={chatEndRef} />
                             </div>
                             <div className="p-4 border-t bg-white">
                                 <div className="flex gap-3">
                                     <Button variant="outline" size="icon" className="shrink-0 h-12 w-12"><Paperclip className="h-5 w-5" /></Button>
-                                    <Input placeholder="Type a message..." className="flex-1 h-12 text-base font-medium" />
-                                    <Button size="icon" className="shrink-0 bg-primary h-12 w-12"><Send className="h-5 w-5" /></Button>
+                                    <Input 
+                                        placeholder="Type a message..." 
+                                        className="flex-1 h-12 text-base font-medium" 
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                    />
+                                    <Button onClick={handleSendMessage} size="icon" className="shrink-0 bg-primary h-12 w-12 hover:bg-primary/90">
+                                        <Send className="h-5 w-5" />
+                                    </Button>
                                 </div>
                             </div>
                         </CardContent>
@@ -322,13 +395,37 @@ export function ActiveDashboard({
                                     : "Complete the ongoing document verification process to unlock the MOU Agreement stage."}
                             </p>
                             {!docsVerified ? (
-                                <Button
-                                    onClick={onVerifyDocs}
-                                    className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base shadow-md"
-                                    size="lg"
-                                >
-                                    Complete Document Verification
-                                </Button>
+                                <Dialog open={isUnlockDialogOpen} onOpenChange={setIsUnlockDialogOpen}>
+                                    <Button
+                                        onClick={() => setIsUnlockDialogOpen(true)}
+                                        className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base shadow-md"
+                                        size="lg"
+                                    >
+                                        Unlock MOU
+                                    </Button>
+                                    <DialogContent className="sm:max-w-md p-6">
+                                        <DialogHeader>
+                                            <DialogTitle className="text-xl font-black">Unlock MOU</DialogTitle>
+                                            <DialogDescription className="text-base text-muted-foreground mt-2">
+                                                Are you sure You want to Unlock MOU , Unclocking MOU means Due Deligances is over between you and your partner 
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="flex justify-end gap-3 mt-6">
+                                            <Button variant="outline" onClick={() => setIsUnlockDialogOpen(false)} className="font-bold">
+                                                No
+                                            </Button>
+                                            <Button 
+                                                onClick={() => {
+                                                    setIsUnlockDialogOpen(false)
+                                                    onVerifyDocs()
+                                                }} 
+                                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                                            >
+                                                Yes
+                                            </Button>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
                             ) : (
                                 <Button
                                     onClick={handleOpenMou}

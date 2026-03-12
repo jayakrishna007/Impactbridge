@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -44,16 +44,27 @@ export function MouSigning({
 
     const canProceed = agreedTerms && agreedUnderstood
 
-    async function handleUpload() {
+    async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0]
+        if (!file) return
+
         setIsUploading(true)
         try {
+            // Wait a brief moment to simulate upload for better UX
+            await new Promise(resolve => setTimeout(resolve, 1500))
             const updated = await apiUploadMou(partnership.id)
             updatePartnership(updated)
-        } catch (e) {
-            console.error("Upload failed", e)
+        } catch (error) {
+            console.error("Upload failed", error)
         } finally {
             setIsUploading(false)
         }
+    }
+
+    const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+    const triggerFileInput = () => {
+        fileInputRef.current?.click()
     }
 
     async function handleSign() {
@@ -102,7 +113,14 @@ export function MouSigning({
                                 </p>
                                 {isFunder && (
                                     <div className="mt-4 flex flex-col items-center">
-                                        <Button onClick={handleUpload} disabled={isUploading} className="bg-blue-600 hover:bg-blue-700 gap-2">
+                                        <input 
+                                            type="file" 
+                                            accept=".pdf" 
+                                            className="hidden" 
+                                            ref={fileInputRef} 
+                                            onChange={handleUpload} 
+                                        />
+                                        <Button onClick={triggerFileInput} disabled={isUploading} className="bg-blue-600 hover:bg-blue-700 gap-2">
                                             <UploadCloud className="h-4 w-4" />
                                             {isUploading ? "Uploading..." : "Upload Official MOU (PDF)"}
                                         </Button>
