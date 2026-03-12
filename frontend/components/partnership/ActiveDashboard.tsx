@@ -390,7 +390,7 @@ export function ActiveDashboard({
                                         <DialogHeader>
                                             <DialogTitle className="text-xl font-black">Unlock MOU</DialogTitle>
                                             <DialogDescription className="text-base text-muted-foreground mt-2">
-                                                Are you sure You want to Unlock MOU , Unclocking MOU means Due Deligances is over between you and your partner 
+                                                Are you sure you want to Unlock MOU? Unlocking MOU means Due Diligence is over between you and your partner.
                                             </DialogDescription>
                                         </DialogHeader>
                                         <div className="flex justify-end gap-3 mt-6">
