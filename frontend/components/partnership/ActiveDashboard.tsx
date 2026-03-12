@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,6 +12,147 @@ import {
     CheckCircle2, ChevronRight, FileText, Send, Paperclip,
     FileSearch, BarChart3, Clock, Lock, Unlock, PenLine, FileUp, Camera, MessageSquare, Plus, Video, Activity
 } from "lucide-react"
+
+// ── Sub-component for Chat to isolate state and prevent jitter ──────────
+const ChatSection = React.memo(({
+    partnership,
+    isFunder,
+    onSendMessage
+}: {
+    partnership: any,
+    isFunder: boolean,
+    onSendMessage: (msg: any) => void
+}) => {
+    const [newMessage, setNewMessage] = useState("")
+    const messages = partnership?.messages || []
+    const chatEndRef = React.useRef<HTMLDivElement>(null)
+    const chatInputRef = React.useRef<HTMLInputElement>(null)
+    const chatFileRef = React.useRef<HTMLInputElement>(null)
+
+    // Scroll to bottom on new messages or mount
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [messages.length])
+
+    const handleSendMessage = (textOverride?: string) => {
+        const textToSend = textOverride || newMessage
+        if (!textToSend.trim()) return
+
+        const now = new Date()
+        let hour = now.getHours()
+        const ampm = hour >= 12 ? 'PM' : 'AM'
+        hour = hour % 12 || 12
+        const minute = now.getMinutes().toString().padStart(2, '0')
+
+        const senderRole = isFunder ? "funder" : "partner"
+        const senderName = isFunder ? (partnership?.funderName || "Funder") : (partnership?.partnerName || "Partner")
+
+        const newMsg = {
+            sender: senderRole,
+            name: senderName,
+            initials: (senderName[0] || "U").toUpperCase(),
+            text: textToSend,
+            time: `${hour}:${minute} ${ampm}`,
+        }
+
+        onSendMessage(newMsg)
+        if (!textOverride) setNewMessage("")
+    }
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        handleSendMessage(`📎 Uploaded document: ${file.name}`)
+        if (chatFileRef.current) chatFileRef.current.value = ""
+    }
+
+    return (
+        <Card className="shadow-sm flex flex-col h-[500px]" id="partnership-chat">
+            <CardHeader className="py-4 border-b bg-muted/20 flex-shrink-0">
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-primary" />
+                    Partnership Chat
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 flex flex-1 flex-col overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-slate-50/50">
+                    {messages.map((msg: any, idx: number) => {
+                        const isSelf = isFunder ? msg.sender === "funder" : msg.sender === "partner"
+
+                        return isSelf ? (
+                            <div key={idx} className="flex gap-4 max-w-[85%] self-end flex-row-reverse ml-auto">
+                                <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                    <span className="text-sm font-bold text-emerald-700">{msg.initials}</span>
+                                </div>
+                                <div className="bg-primary text-primary-foreground border-primary rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm">
+                                    <p className="text-sm font-bold text-primary-foreground/80 mb-1">{msg.name} • You</p>
+                                    <div className="text-base text-white font-medium break-words">
+                                        {msg.text.startsWith("📎") ? (
+                                            <div className="flex items-center gap-2 bg-white/10 p-2 rounded-lg border border-white/20">
+                                                <FileText className="h-4 w-4" />
+                                                <span>{msg.text.replace("📎 ", "")}</span>
+                                            </div>
+                                        ) : msg.text}
+                                    </div>
+                                    <p className="text-xs font-semibold text-primary-foreground/80 text-right mt-2">{msg.time}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div key={idx} className="flex gap-4 max-w-[85%]">
+                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                    <span className="text-sm font-bold text-blue-700">{msg.initials}</span>
+                                </div>
+                                <div className="bg-white border rounded-2xl rounded-tl-sm px-5 py-3 shadow-sm">
+                                    <p className="text-sm font-bold text-muted-foreground mb-1">{msg.name} • {msg.sender === "funder" ? "Funder" : "Partner"}</p>
+                                    <div className="text-base text-foreground space-y-1 break-words">
+                                        {msg.text.startsWith("📎") ? (
+                                            <div className="flex items-center gap-2 bg-secondary/50 p-2 rounded-lg border">
+                                                <FileText className="h-4 w-4 text-primary" />
+                                                <span className="font-bold">{msg.text.replace("📎 ", "")}</span>
+                                            </div>
+                                        ) : msg.text}
+                                    </div>
+                                    <p className="text-xs font-semibold text-muted-foreground text-right mt-2">{msg.time}</p>
+                                </div>
+                            </div>
+                        )
+                    })}
+                    <div ref={chatEndRef} />
+                </div>
+                <div className="p-4 border-t bg-white flex-shrink-0">
+                    <div className="flex gap-3">
+                        <input
+                            type="file"
+                            className="hidden"
+                            ref={chatFileRef}
+                            onChange={handleFileUpload}
+                        />
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="shrink-0 h-11 w-11"
+                            onClick={() => chatFileRef.current?.click()}
+                        >
+                            <Paperclip className="h-5 w-5" />
+                        </Button>
+                        <Input
+                            ref={chatInputRef}
+                            placeholder="Type a message..."
+                            className="flex-1 h-11 text-base font-medium"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                        />
+                        <Button onClick={() => handleSendMessage()} size="icon" className="shrink-0 bg-primary h-11 w-11 hover:bg-primary/90">
+                            <Send className="h-5 w-5" />
+                        </Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    )
+})
+ChatSection.displayName = "ChatSection"
 
 export function ActiveDashboard({
     partnership,
@@ -44,60 +185,14 @@ export function ActiveDashboard({
     const [isMeetingDialogOpen, setIsMeetingDialogOpen] = useState(false)
     const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false)
 
-    // Chat State sync
-    const messages = partnership?.messages || []
-    const [newMessage, setNewMessage] = useState("")
-    const chatEndRef = React.useRef<HTMLDivElement>(null)
-    const chatInputRef = React.useRef<HTMLInputElement>(null)
-    const chatFileRef = React.useRef<HTMLInputElement>(null)
-
-    const handleSendMessage = (textOverride?: string) => {
-        const textToSend = textOverride || newMessage
-        if (!textToSend.trim()) return
-
-        const now = new Date()
-        let hour = now.getHours()
-        const ampm = hour >= 12 ? 'PM' : 'AM'
-        hour = hour % 12 || 12
-        const minute = now.getMinutes().toString().padStart(2, '0')
-
-        const senderRole = isFunder ? "funder" : "partner"
-        const senderName = isFunder ? (partnership?.funderName || "Funder") : (partnership?.partnerName || "Partner")
-        
-        const newMsg = {
-            sender: senderRole,
-            name: senderName,
-            initials: (senderName[0] || "U").toUpperCase(),
-            text: textToSend,
-            time: `${hour}:${minute} ${ampm}`,
-        }
-
-        onSendMessage(newMsg)
-        if (!textOverride) setNewMessage("")
-        
-        setTimeout(() => {
-            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-        }, 100)
-    }
-
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file) return
-
-        // Simulate upload by sending a message
-        handleSendMessage(`📎 Uploaded document: ${file.name}`)
-        if (chatFileRef.current) chatFileRef.current.value = ""
-    }
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            handleSendMessage()
-        }
-    }
-
     const focusChat = () => {
-        chatInputRef.current?.focus()
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        const chatEl = document.getElementById("partnership-chat")
+        if (chatEl) {
+            chatEl.scrollIntoView({ behavior: 'smooth' })
+            // Focus the input inside ChatSection
+            const input = chatEl.querySelector('input[type="text"]') as HTMLInputElement
+            input?.focus()
+        }
     }
 
     const handleScheduleMeeting = () => {
@@ -131,7 +226,7 @@ export function ActiveDashboard({
     }
 
     return (
-        <div className="mx-auto max-w-5xl px-6 pt-8 pb-16 space-y-8 animate-in fade-in duration-500">
+        <div className="mx-auto max-w-5xl px-6 pt-8 pb-16 space-y-8">
 
             {/* Step Tracker */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-border">
@@ -230,89 +325,11 @@ export function ActiveDashboard({
                     </Card>
 
                     {/* Partnership Chat */}
-                    <Card className="shadow-sm flex flex-col h-[500px]" id="partnership-chat">
-                        <CardHeader className="py-4 border-b bg-muted/20 flex-shrink-0">
-                            <CardTitle className="text-lg font-bold flex items-center gap-2">
-                                <MessageSquare className="h-5 w-5 text-primary" />
-                                Partnership Chat
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0 flex flex-col flex-1 overflow-hidden">
-                            <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-slate-50/50">
-                                {messages.map((msg: any, idx: number) => {
-                                    const isSelf = isFunder ? msg.sender === "funder" : msg.sender === "partner"
-                                    
-                                    return isSelf ? (
-                                        <div key={idx} className="flex gap-4 max-w-[85%] self-end flex-row-reverse ml-auto">
-                                            <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                                                <span className="text-sm font-bold text-emerald-700">{msg.initials}</span>
-                                            </div>
-                                            <div className="bg-primary text-primary-foreground border-primary rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm">
-                                                <p className="text-sm font-bold text-primary-foreground/80 mb-1">{msg.name} • You</p>
-                                                <div className="text-base text-white font-medium break-words">
-                                                    {msg.text.startsWith("📎") ? (
-                                                        <div className="flex items-center gap-2 bg-white/10 p-2 rounded-lg border border-white/20">
-                                                            <FileText className="h-4 w-4" />
-                                                            <span>{msg.text.replace("📎 ", "")}</span>
-                                                        </div>
-                                                    ) : msg.text}
-                                                </div>
-                                                <p className="text-xs font-semibold text-primary-foreground/80 text-right mt-2">{msg.time}</p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div key={idx} className="flex gap-4 max-w-[85%]">
-                                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                                                <span className="text-sm font-bold text-blue-700">{msg.initials}</span>
-                                            </div>
-                                            <div className="bg-white border rounded-2xl rounded-tl-sm px-5 py-3 shadow-sm">
-                                                <p className="text-sm font-bold text-muted-foreground mb-1">{msg.name} • {msg.sender === "funder" ? "Funder" : "Partner"}</p>
-                                                <div className="text-base text-foreground space-y-1 break-words">
-                                                    {msg.text.startsWith("📎") ? (
-                                                        <div className="flex items-center gap-2 bg-secondary/50 p-2 rounded-lg border">
-                                                            <FileText className="h-4 w-4 text-primary" />
-                                                            <span className="font-bold">{msg.text.replace("📎 ", "")}</span>
-                                                        </div>
-                                                    ) : msg.text}
-                                                </div>
-                                                <p className="text-xs font-semibold text-muted-foreground text-right mt-2">{msg.time}</p>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                                <div ref={chatEndRef} />
-                            </div>
-                            <div className="p-4 border-t bg-white flex-shrink-0">
-                                <div className="flex gap-3">
-                                    <input 
-                                        type="file" 
-                                        className="hidden" 
-                                        ref={chatFileRef} 
-                                        onChange={handleFileUpload}
-                                    />
-                                    <Button 
-                                        variant="outline" 
-                                        size="icon" 
-                                        className="shrink-0 h-11 w-11"
-                                        onClick={() => chatFileRef.current?.click()}
-                                    >
-                                        <Paperclip className="h-5 w-5" />
-                                    </Button>
-                                    <Input 
-                                        ref={chatInputRef}
-                                        placeholder="Type a message..." 
-                                        className="flex-1 h-11 text-base font-medium" 
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                        onKeyDown={handleKeyDown}
-                                    />
-                                    <Button onClick={() => handleSendMessage()} size="icon" className="shrink-0 bg-primary h-11 w-11 hover:bg-primary/90">
-                                        <Send className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <ChatSection 
+                        partnership={partnership} 
+                        isFunder={isFunder} 
+                        onSendMessage={onSendMessage} 
+                    />
                 </div>
 
                 {/* ── Right Column ── */}
@@ -327,10 +344,14 @@ export function ActiveDashboard({
                             <Button className={`w-full justify-start gap-3 h-12 text-base font-bold ${docsVerified ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary cursor-not-allowed'}`} disabled={!docsVerified} onClick={docsVerified ? handleOpenMou : undefined}>
                                 {docsVerified ? <PenLine className="h-5 w-5" /> : <Lock className="h-5 w-5" />} View / Sign MOU
                             </Button>
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 className="w-full justify-start gap-3 h-12 text-base font-bold border-2"
-                                onClick={() => chatFileRef.current?.click()}
+                                onClick={() => {
+                                    const chatEl = document.getElementById("partnership-chat")
+                                    const fileInput = chatEl?.querySelector('input[type="file"]') as HTMLInputElement
+                                    fileInput?.click()
+                                }}
                             >
                                 <FileUp className="h-5 w-5 text-muted-foreground" /> Upload Document
                             </Button>

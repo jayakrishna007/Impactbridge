@@ -129,7 +129,6 @@ export default function CreateBeneficiaryProposalPage() {
             // Could show error toast here
         }
     }
-    }
 
     // Custom File Upload Component helper
     const FileUploadInput = ({ id, label, helpText }: { id: string, label: string, helpText?: string }) => (
