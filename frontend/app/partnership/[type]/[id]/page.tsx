@@ -150,15 +150,23 @@ export default function PartnershipPage() {
                     partnerName,
                 })
                 
-                // Fetch associated messages from dedicated collection
-                const msgs = await apiGetChatMessages(p.id)
-                const partnershipWithMsgs = { ...p, messages: msgs }
-
-                setFullPartnership(partnershipWithMsgs)
+                // CRITICAL: Set ID immediately so chat input becomes active
                 setPartnershipId(p.id)
                 setFunderConfirmed(p.funderConfirmed)
                 setPartnerConfirmed(p.partnerConfirmed)
                 setDocsVerified(!!p.docsVerified)
+
+                // Try to fetch messages, but don't block the whole UI if it fails
+                let msgs = []
+                try {
+                    msgs = await apiGetChatMessages(p.id)
+                } catch (err) {
+                    console.error("Failed to fetch messages:", err)
+                }
+                
+                const partnershipWithMsgs = { ...p, messages: msgs }
+                setFullPartnership(partnershipWithMsgs)
+
                 setPartnership(storageKey, { 
                     funderConfirmed: p.funderConfirmed, 
                     partnerConfirmed: p.partnerConfirmed, 

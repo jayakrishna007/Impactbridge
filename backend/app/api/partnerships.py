@@ -144,112 +144,6 @@ async def partner_confirm(partnership_id: str):
 
     return clean(updated)
 
-@router.get("/{proposal_type}/{proposal_id}")
-async def get_partnership_for_proposal(proposal_type: str, proposal_id: str, funder_email: str):
-    database = get_db()
-    doc = await database["partnerships"].find_one({
-        "proposalId":   proposal_id,
-        "proposalType": proposal_type,
-        "funderEmail":  funder_email,
-    })
-    if not doc:
-        raise HTTPException(status_code=404, detail="Partnership not found")
-    return clean(doc)
-
-@router.put("/{partnership_id}/mou-upload")
-async def upload_partnership_mou(partnership_id: str):
-    database = get_db()
-    col = database["partnerships"]
-
-    p = await col.find_one({"id": partnership_id})
-    if not p:
-        raise HTTPException(status_code=404, detail="Partnership not found")
-
-    await col.update_one({"id": partnership_id}, {"$set": {"mouUploaded": True}})
-    updated = await col.find_one({"id": partnership_id})
-
-    if p.get("partnerEmail"):
-        await push_notification(
-            database,
-            recipientEmail = p["partnerEmail"],
-            senderName     = p.get("funderName", "Your Funder"),
-            notif_type     = "mou_uploaded",
-            title          = "📄 MOU Agreement Ready for Review",
-            message        = f"{p.get('funderName', 'The funder')} has uploaded the official MOU for \"{p.get('proposalTitle', 'the proposal')}\". Please review the terms, accept the conditions, and digitally sign it.",
-            linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}",
-            linkLabel      = "Review and Sign MOU",
-        )
-
-    return clean(updated)
-
-@router.put("/{partnership_id}/mou-sign")
-async def sign_partnership_mou(partnership_id: str, data: MouSignRequest):
-    database = get_db()
-    col = database["partnerships"]
-
-    p = await col.find_one({"id": partnership_id})
-    if not p:
-        raise HTTPException(status_code=404, detail="Partnership not found")
-        
-    mou_sigs = p.get("mouSignatures", {
-        "funder": False,
-        "partner": False,
-        "funderSignedAt": None,
-        "partnerSignedAt": None
-    })
-    
-    now = datetime.utcnow().isoformat()
-    if data.role == "funder":
-        mou_sigs["funder"] = True
-        mou_sigs["funderSignedAt"] = now
-        
-        if p.get("partnerEmail"):
-            await push_notification(
-                database,
-                recipientEmail = p["partnerEmail"],
-                senderName     = p.get("funderName", "Your Funder"),
-                notif_type     = "mou_signed",
-                title          = "✍️ MOU Signed by Funder",
-                message        = f"{p.get('funderName', 'The funder')} has digitally signed the MOU for \"{p.get('proposalTitle', 'the proposal')}\".",
-                linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}",
-                linkLabel      = "View Signed MOU",
-            )
-            
-    elif data.role == "partner":
-        mou_sigs["partner"] = True
-        mou_sigs["partnerSignedAt"] = now
-        
-        if p.get("funderEmail"):
-            await push_notification(
-                database,
-                recipientEmail = p["funderEmail"],
-                senderName     = p.get("partnerName", "Your Partner"),
-                notif_type     = "mou_signed",
-                title          = "✍️ MOU Signed by Partner",
-                message        = f"{p.get('partnerName', 'The partner')} has reviewed and digitally signed the MOU for \"{p.get('proposalTitle', 'the proposal')}\".",
-                linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}",
-                linkLabel      = "View Signed MOU",
-            )
-    else:
-        raise HTTPException(status_code=400, detail="Invalid role")
-
-    await col.update_one({"id": partnership_id}, {"$set": {"mouSignatures": mou_sigs}})
-    updated = await col.find_one({"id": partnership_id})
-    return clean(updated)
-
-@router.put("/{partnership_id}/verify-docs")
-async def verify_partnership_docs(partnership_id: str):
-    database = get_db()
-    col = database["partnerships"]
-
-    p = await col.find_one({"id": partnership_id})
-    if not p:
-        raise HTTPException(status_code=404, detail="Partnership not found")
-
-    await col.update_one({"id": partnership_id}, {"$set": {"docsVerified": True}})
-    updated = await col.find_one({"id": partnership_id})
-    return clean(updated)
-
 @router.get("/{partnership_id}/messages")
 async def get_partnership_messages(partnership_id: str):
     database = get_db()
@@ -275,3 +169,15 @@ async def add_partnership_chat(partnership_id: str, message: ChatMessage):
     await manager.broadcast(clean(new_msg), partnership_id)
 
     return clean(p)
+
+@router.get("/{proposal_type}/{proposal_id}")
+async def get_partnership_for_proposal(proposal_type: str, proposal_id: str, funder_email: str):
+    database = get_db()
+    doc = await database["partnerships"].find_one({
+        "proposalId":   proposal_id,
+        "proposalType": proposal_type,
+        "funderEmail":  funder_email,
+    })
+    if not doc:
+        raise HTTPException(status_code=404, detail="Partnership not found")
+    return clean(doc)
