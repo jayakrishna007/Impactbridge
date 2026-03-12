@@ -58,6 +58,10 @@ async def connect_db():
         )
         await db["notifications"].create_index([("id", ASCENDING)], unique=True)
         await db["notifications"].create_index([("recipientEmail", ASCENDING)])
+        
+        # ── Chats collection indexes ──
+        await db["chats"].create_index([("partnershipId", ASCENDING)])
+        await db["chats"].create_index([("createdAt", ASCENDING)])
 
         print(f"✅ Connected to MongoDB: {DB_NAME}")
     except errors.ServerSelectionTimeoutError as e:

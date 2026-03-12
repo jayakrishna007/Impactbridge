@@ -159,11 +159,13 @@ class NotificationCreate(BaseModel):
     linkLabel:      Optional[str] = None
 
 class ChatMessage(BaseModel):
+    partnershipId: Optional[str] = None
     sender: str  # 'funder' or 'partner'
     name: str
     initials: str
     text: str
     time: str
+    createdAt: Optional[str] = None
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -427,24 +429,37 @@ async def create_or_get_partnership(data: PartnershipCreate):
             "funderSignedAt": None,
             "partnerSignedAt": None
         },
-        "messages": [
-            {
-                "sender": "funder",
-                "name": data.funderName,
-                "initials": data.funderName[0].upper() if data.funderName else "F",
-                "text": "We've reviewed your trust deed. Looks great. Could you also share the FCRA certificate to proceed with the MOU?",
-                "time": "10:30 AM",
-            },
-            {
-                "sender": "partner",
-                "name": data.partnerName,
-                "initials": data.partnerName[0].upper() if data.partnerName else "P",
-                "text": "Sure! Uploading it right now to the portal.",
-                "time": "11:15 AM",
-            }
-        ]
+        "mouSignatures": {
+            "funder": False,
+            "partner": False,
+            "funderSignedAt": None,
+            "partnerSignedAt": None
+        }
     }
     await col.insert_one(partnership)
+
+    # Seed initial messages into the new CHATS collection
+    initial_messages = [
+        {
+            "partnershipId": partnership["id"],
+            "sender": "funder",
+            "name": data.funderName,
+            "initials": data.funderName[0].upper() if data.funderName else "F",
+            "text": "We've reviewed your trust deed. Looks great. Could you also share the FCRA certificate to proceed with the MOU?",
+            "time": "10:30 AM",
+            "createdAt": datetime.utcnow().isoformat(),
+        },
+        {
+            "partnershipId": partnership["id"],
+            "sender": "partner",
+            "name": data.partnerName,
+            "initials": data.partnerName[0].upper() if data.partnerName else "P",
+            "text": "Sure! Uploading it right now to the portal.",
+            "time": "11:15 AM",
+            "createdAt": datetime.utcnow().isoformat(),
+        }
+    ]
+    await database["chats"].insert_many(initial_messages)
 
     return clean(partnership)
 
@@ -634,27 +649,35 @@ async def verify_partnership_docs(partnership_id: str):
         raise HTTPException(status_code=404, detail="Partnership not found")
 
     await col.update_one({"id": partnership_id}, {"$set": {"docsVerified": True}})
-    updated = await col.find_one({"id": partnership_id})
     return clean(updated)
+
+@app.get("/partnerships/{partnership_id}/messages")
+async def get_partnership_messages(partnership_id: str):
+    """Fetch all messages for a specific partnership from the dedicated chats collection."""
+    database = db.get_db()
+    cursor = database["chats"].find({"partnershipId": partnership_id}).sort("createdAt", 1)
+    messages = await cursor.to_list(length=500)
+    return [clean(m) for m in messages]
 
 @app.post("/partnerships/{partnership_id}/chat")
 async def add_partnership_chat(partnership_id: str, message: ChatMessage):
-    """Add a message to the partnership chat history."""
+    """Add a message to the dedicated dedicated chats collection."""
     database = db.get_db()
-    col = database["partnerships"]
-
-    p = await col.find_one({"id": partnership_id})
+    
+    # Verify partnership exists
+    p = await database["partnerships"].find_one({"id": partnership_id})
     if not p:
         raise HTTPException(status_code=404, detail="Partnership not found")
 
     new_msg = message.model_dump()
-    await col.update_one(
-        {"id": partnership_id},
-        {"$push": {"messages": new_msg}}
-    )
+    new_msg["partnershipId"] = partnership_id
+    if not new_msg.get("createdAt"):
+        new_msg["createdAt"] = datetime.utcnow().isoformat()
+        
+    await database["chats"].insert_one(new_msg)
     
-    updated = await col.find_one({"id": partnership_id})
-    return clean(updated)
+    # Return the updated partnership record (for backward compatibility if needed)
+    return clean(p)
 
 # ══════════════════════════════════════════════════════════════════════════
 # Notifications

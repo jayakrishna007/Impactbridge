@@ -207,13 +207,18 @@ export interface PartnershipData {
         funderSignedAt: string | null;
         partnerSignedAt: string | null;
     };
-    messages?: Array<{
-        sender: string;
-        name: string;
-        initials: string;
-        text: string;
-        time: string;
-    }>;
+    messages?: ChatMessage[];
+}
+
+export interface ChatMessage {
+    id?: string;
+    partnershipId?: string;
+    sender: string;
+    name: string;
+    initials: string;
+    text: string;
+    time: string;
+    createdAt?: string;
 }
 
 /** Create a new partnership record (or return existing one). Called when funder lands on /partnership page. */
@@ -269,17 +274,16 @@ export async function apiVerifyDocs(partnershipId: string): Promise<PartnershipD
 }
 
 /** Send a chat message. */
-export async function apiSendChat(partnershipId: string, message: {
-    sender: string;
-    name: string;
-    initials: string;
-    text: string;
-    time: string;
-}): Promise<PartnershipData> {
+export async function apiSendChat(partnershipId: string, message: ChatMessage): Promise<PartnershipData> {
     return apiFetch<PartnershipData>(`/partnerships/${partnershipId}/chat`, {
         method: "POST",
         body: JSON.stringify(message),
     });
+}
+
+/** Get all messages for a specific partnership. */
+export async function apiGetChatMessages(partnershipId: string): Promise<ChatMessage[]> {
+    return apiFetch<ChatMessage[]>(`/partnerships/${partnershipId}/messages`);
 }
 
 /** Get a specific partnership between funder + proposal. */

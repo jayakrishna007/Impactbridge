@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { 
     apiCreatePartnership, apiFunderConfirm, apiPartnerConfirm, 
-    apiVerifyDocs, apiSendChat 
+    apiVerifyDocs, apiSendChat, apiGetChatMessages, ChatMessage 
 } from "@/lib/api"
 import { ActiveDashboard } from "@/components/partnership/ActiveDashboard"
 import { MouSigning } from "@/components/partnership/MouSigning"
@@ -147,8 +147,12 @@ export default function PartnershipPage() {
                 funderName: user.name,
                 partnerEmail,
                 partnerName,
-            }).then(p => {
-                setFullPartnership(p)
+            }).then(async (p) => {
+                // Fetch associated messages from dedicated collection
+                const msgs = await apiGetChatMessages(p.id)
+                const partnershipWithMsgs = { ...p, messages: msgs }
+
+                setFullPartnership(partnershipWithMsgs)
                 setPartnershipId(p.id)
                 setFunderConfirmed(p.funderConfirmed)
                 setPartnerConfirmed(p.partnerConfirmed)
@@ -156,7 +160,7 @@ export default function PartnershipPage() {
                 setPartnership(storageKey, { 
                     funderConfirmed: p.funderConfirmed, 
                     partnerConfirmed: p.partnerConfirmed, 
-                    pship: p, 
+                    pship: partnershipWithMsgs, 
                     docsVerified: p.docsVerified 
                 })
             }).catch((error) => {
@@ -174,8 +178,8 @@ export default function PartnershipPage() {
         setMounted(true)
         setTimeout(() => setNotifVisible(true), 800)
 
-        // Poll every 10 seconds for "live" updates between users
-        const interval = setInterval(syncPartnership, 10000)
+        // Poll every 3 seconds for fast updates
+        const interval = setInterval(syncPartnership, 3000)
 
         return () => clearInterval(interval)
     }, [proposal, user, id, type, storageKey])
@@ -223,11 +227,23 @@ export default function PartnershipPage() {
         setPartnership(storageKey, { ...getPartnership(storageKey), docsVerified: true })
     }
 
-    async function handleSendMessage(msg: any) {
+    async function handleSendMessage(msg: ChatMessage) {
         if (partnershipId) {
+            // Optimistic UI Update: Add message locally before backend confirms
+            setFullPartnership((prev: any) => {
+                if (!prev) return prev
+                const existingMsgs = prev.messages || []
+                // Avoid duplicates if polling somehow overlaps exactly
+                if (existingMsgs.some((m: any) => m.text === msg.text && m.time === msg.time && m.sender === msg.sender)) {
+                    return prev
+                }
+                return { ...prev, messages: [...existingMsgs, msg] }
+            })
+
             try {
-                const updated = await apiSendChat(partnershipId, msg)
-                setFullPartnership(updated)
+                await apiSendChat(partnershipId, msg)
+                // We don't need to do anything else, the next polling cycle (3s) 
+                // or the optimistic update already handled the display.
             } catch (error) {
                 console.error("Chat sync failed", error)
             }
