@@ -29,11 +29,6 @@ const ChatSection = React.memo(({
     const chatInputRef = React.useRef<HTMLInputElement>(null)
     const chatFileRef = React.useRef<HTMLInputElement>(null)
 
-    // Scroll to bottom on new messages or mount
-    useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages.length])
-
     const handleSendMessage = (textOverride?: string) => {
         const textToSend = textOverride || newMessage
         if (!textToSend.trim()) return
@@ -188,8 +183,19 @@ export function ActiveDashboard({
     const focusChat = () => {
         const chatEl = document.getElementById("partnership-chat")
         if (chatEl) {
+            // 1. Scroll the entire page so the chat section is visible
             chatEl.scrollIntoView({ behavior: 'smooth' })
-            // Focus the input inside ChatSection
+            
+            // 2. Scroll the internal message list to the bottom
+            const messageContainer = chatEl.querySelector('.overflow-y-auto')
+            if (messageContainer) {
+                messageContainer.scrollTo({ 
+                    top: messageContainer.scrollHeight, 
+                    behavior: 'smooth' 
+                })
+            }
+
+            // 3. Focus the text input
             const input = chatEl.querySelector('input[type="text"]') as HTMLInputElement
             input?.focus()
         }
@@ -348,9 +354,12 @@ export function ActiveDashboard({
                                 variant="outline"
                                 className="w-full justify-start gap-3 h-12 text-base font-bold border-2"
                                 onClick={() => {
-                                    const chatEl = document.getElementById("partnership-chat")
-                                    const fileInput = chatEl?.querySelector('input[type="file"]') as HTMLInputElement
-                                    fileInput?.click()
+                                    focusChat()
+                                    setTimeout(() => {
+                                        const chatEl = document.getElementById("partnership-chat")
+                                        const fileInput = chatEl?.querySelector('input[type="file"]') as HTMLInputElement
+                                        fileInput?.click()
+                                    }, 100) // Small delay to allow scroll to start
                                 }}
                             >
                                 <FileUp className="h-5 w-5 text-muted-foreground" /> Upload Document
