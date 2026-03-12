@@ -46,25 +46,27 @@ export default function RegisterPage() {
 
     setIsLoading(true)
 
-    // Simulate registration delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
+    try {
+      // Save to backend (falls back to localStorage if backend is offline)
+      const result = await login(name, email, role as UserRole)
 
-    // Save to backend (falls back to localStorage if backend is offline)
-    const result = await login(name, email, role as UserRole)
+      if (result.error) {
+        setError(result.error)
+        setIsLoading(false)
+        return
+      }
 
-    setIsLoading(false)
+      setIsSuccess(true)
 
-    if (result.error) {
-      setError(result.error)
-      return
+      // Redirect to their dashboard after a short delay
+      setTimeout(() => {
+        router.push(getDashboardPath(role as UserRole, result.hasProfile))
+      }, 1000)
+    } catch (err: any) {
+      console.error("Registration error:", err)
+      setError(err?.message || "Registration failed. Please try again.")
+      setIsLoading(false)
     }
-
-    setIsSuccess(true)
-
-    // Redirect to their dashboard after a short delay
-    setTimeout(() => {
-      router.push(getDashboardPath(role as UserRole, result.hasProfile))
-    }, 1000)
   }
 
   return (

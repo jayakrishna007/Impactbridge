@@ -28,6 +28,26 @@ const STEPS = [
     { id: 4, title: "Supporting Documents", icon: FileText },
 ]
 
+interface NGOFormData {
+    orgName?: string
+    projTitle?: string
+    totalBudget?: string | number
+    geography?: string
+    projObjectives?: string
+    regDetails?: string
+    orgEmail?: string
+    orgPhone?: string
+    expEducation?: string
+    targetGroup?: string
+    expectedOutcomes?: string
+    monitoringPlan?: string
+    projectDuration?: string
+    costBreakdown?: string
+    disbursementPlan?: string
+    finSustainability?: string
+    [key: string]: any
+}
+
 export default function CreateProposalPage() {
     const { user, isLoading } = useAuth()
     const { addNgoProposal } = useProposals()
@@ -36,7 +56,7 @@ export default function CreateProposalPage() {
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
-    const [formData, setFormData] = useState<any>({})
+    const [formData, setFormData] = useState<NGOFormData>({})
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.id]: e.target.value })
@@ -75,49 +95,46 @@ export default function CreateProposalPage() {
 
         setIsSubmitting(true)
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500))
-
-        // Create new proposal
-        const newProposal = {
-            id: `ngo-${Date.now()}`,
-            icon: BookOpen,
-            ngoName: formData.orgName || user?.name || "Unknown NGO",
-            title: formData.projTitle || "New Education Project",
-            category: "Primary Education", // Simplified for demo
-            fundingRequired: `₹${(Number(formData.totalBudget) || 0).toLocaleString()}`,
-            fundingRaised: "₹0",
-            progress: 0,
-            beneficiaries: 1000,
-            status: "Seeking Funding",
-            location: formData.geography || "Pan India",
-            deadline: "Dec 31, 2026",
-            description: formData.projObjectives || "A new initiative to drive educational impact.",
-            createdBy: user?.email || "",
-            fullDetails: {
-                regDetails: formData.regDetails,
-                orgEmail: formData.orgEmail,
-                orgPhone: formData.orgPhone,
-                expEducation: formData.expEducation,
-                targetGroup: formData.targetGroup,
-                expectedOutcomes: formData.expectedOutcomes,
-                monitoringPlan: formData.monitoringPlan,
-                projectDuration: formData.projectDuration,
-                costBreakdown: formData.costBreakdown,
-                disbursementPlan: formData.disbursementPlan,
-                finSustainability: formData.finSustainability,
+        try {
+            // Create new proposal with properly typed data
+            const newProposal: Omit<any, 'id' | 'fundingRaised' | 'progress' | 'status'> = {
+                ngoName: formData.orgName || user?.name || "Unknown NGO",
+                title: formData.projTitle || "New Education Project",
+                category: formData.category || "Primary Education",
+                fundingRequired: `₹${(Number(formData.totalBudget) || 0).toLocaleString()}`,
+                location: formData.geography || "Pan India",
+                deadline: "Dec 31, 2026",
+                description: formData.projObjectives || "A new initiative to drive educational impact.",
+                beneficiaries: 1000,
+                createdBy: user?.email || "",
+                fullDetails: {
+                    regDetails: formData.regDetails,
+                    orgEmail: formData.orgEmail,
+                    orgPhone: formData.orgPhone,
+                    expEducation: formData.expEducation,
+                    targetGroup: formData.targetGroup,
+                    expectedOutcomes: formData.expectedOutcomes,
+                    monitoringPlan: formData.monitoringPlan,
+                    projectDuration: formData.projectDuration,
+                    costBreakdown: formData.costBreakdown,
+                    disbursementPlan: formData.disbursementPlan,
+                    finSustainability: formData.finSustainability,
+                }
             }
+
+            await addNgoProposal(newProposal)
+
+            setIsSuccess(true)
+
+            // Redirect back to proposals list after success
+            setTimeout(() => {
+                router.push("/ngo-proposal")
+            }, 2000)
+        } catch (error) {
+            console.error("Failed to create proposal:", error)
+            setIsSubmitting(false)
+            // Could show error toast here
         }
-
-        addNgoProposal(newProposal)
-
-        setIsSubmitting(false)
-        setIsSuccess(true)
-
-        // Redirect back to proposals list after success
-        setTimeout(() => {
-            router.push("/ngo-proposal")
-        }, 2000)
     }
 
     // Custom File Upload Component helper

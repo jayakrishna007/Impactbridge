@@ -51,27 +51,29 @@ function LoginContent() {
     setIsLoading(true)
     setLoginError(null)
 
-    // Simulate a login delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
+    try {
+      // Call the backend (async — falls back to localStorage if backend is offline)
+      const dummyName = email.split("@")[0] || "User"
+      const result = await login(dummyName, email, role as UserRole)
 
-    // Call the backend (now async — falls back to localStorage if backend is offline)
-    const dummyName = email.split("@")[0] || "User"
-    const result = await login(dummyName, email, role as UserRole)
+      // Fix 1: Show error if wrong role
+      if (result.error) {
+        setLoginError(result.error)
+        setIsLoading(false)
+        return
+      }
 
-    setIsLoading(false)
+      setIsSuccess(true)
 
-    // Fix 1: Show error if wrong role
-    if (result.error) {
-      setLoginError(result.error)
-      return
+      // Redirect to the role-specific dashboard or setup after a short delay
+      setTimeout(() => {
+        router.push(getDashboardPath(role as UserRole, result.hasProfile))
+      }, 1000)
+    } catch (err: any) {
+      console.error("Login error:", err)
+      setLoginError(err?.message || "Login failed. Please try again.")
+      setIsLoading(false)
     }
-
-    setIsSuccess(true)
-
-    // Redirect to the role-specific dashboard or setup after a short delay
-    setTimeout(() => {
-      router.push(getDashboardPath(role as UserRole, result.hasProfile))
-    }, 1000)
   }
 
   return (

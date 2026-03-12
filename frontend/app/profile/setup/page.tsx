@@ -48,29 +48,31 @@ export default function ProfileSetupPage() {
         e.preventDefault()
         setIsSubmitting(true)
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        try {
+            await updatePortfolio({
+                about: formData.about,
+                mission: formData.mission,
+                vision: formData.vision,
+                experience: formData.experience,
+                contact: {
+                    phone: formData.phone,
+                    website: formData.website,
+                    address: formData.address
+                }
+            })
 
-        await updatePortfolio({
-            about: formData.about,
-            mission: formData.mission,
-            vision: formData.vision,
-            experience: formData.experience,
-            contact: {
-                phone: formData.phone,
-                website: formData.website,
-                address: formData.address
-            }
-        })
+            setIsSuccess(true)
 
-        setIsSubmitting(false)
-        setIsSuccess(true)
-
-        setTimeout(() => {
-            if (user) {
-                router.push(getDashboardPath(user.role, true))
-            }
-        }, 1500)
+            setTimeout(() => {
+                if (user) {
+                    router.push(getDashboardPath(user.role, true))
+                }
+            }, 1500)
+        } catch (error) {
+            console.error("Failed to update profile:", error)
+            setIsSubmitting(false)
+            // Could show error toast here
+        }
     }
 
     if (isLoading || !user) {

@@ -21,6 +21,26 @@ const STEPS = [
     { id: 4, title: "Supporting Documents", icon: FileText },
 ]
 
+interface ProposalFormData {
+    orgName?: string
+    projTitle?: string
+    totalBudget?: string | number
+    geography?: string
+    projObjectives?: string
+    regDetails?: string
+    orgEmail?: string
+    orgPhone?: string
+    expEducation?: string
+    targetGroup?: string
+    expectedOutcomes?: string
+    monitoringPlan?: string
+    projectDuration?: string
+    costBreakdown?: string
+    disbursementPlan?: string
+    finSustainability?: string
+    [key: string]: any
+}
+
 export default function CreateBeneficiaryProposalPage() {
     const { user, isLoading } = useAuth()
     const { addIndividualProposal } = useProposals()
@@ -29,7 +49,7 @@ export default function CreateBeneficiaryProposalPage() {
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
-    const [formData, setFormData] = useState<any>({})
+    const [formData, setFormData] = useState<ProposalFormData>({})
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.id]: e.target.value })
@@ -68,49 +88,47 @@ export default function CreateBeneficiaryProposalPage() {
 
         setIsSubmitting(true)
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500))
-
-        // Create new proposal
-        const newProposal = {
-            id: `ind-${Date.now()}`,
-            icon: BookOpen,
-            name: formData.orgName || user?.name || "Unknown Beneficiary",
-            title: formData.projTitle || "New Individual Project",
-            category: "Digital Education", // Simplified for demo
-            fundingRequired: `₹${(Number(formData.totalBudget) || 0).toLocaleString()}`,
-            fundingRaised: "₹0",
-            progress: 0,
-            beneficiaries: 10,
-            status: "Seeking Funding",
-            location: formData.geography || "Pan India",
-            deadline: "Dec 31, 2026",
-            description: formData.projObjectives || "A grassroots initiative for learning.",
-            createdBy: user?.email || "",
-            fullDetails: {
-                regDetails: formData.regDetails,
-                orgEmail: formData.orgEmail,
-                orgPhone: formData.orgPhone,
-                expEducation: formData.expEducation,
-                targetGroup: formData.targetGroup,
-                expectedOutcomes: formData.expectedOutcomes,
-                monitoringPlan: formData.monitoringPlan,
-                projectDuration: formData.projectDuration,
-                costBreakdown: formData.costBreakdown,
-                disbursementPlan: formData.disbursementPlan,
-                finSustainability: formData.finSustainability,
+        try {
+            // Create new proposal with properly typed data
+            const newProposal: Omit<any, 'id' | 'fundingRaised' | 'progress' | 'status'> = {
+                name: formData.orgName || user?.name || "Unknown Beneficiary",
+                title: formData.projTitle || "New Individual Project",
+                category: "Digital Education",
+                fundingRequired: `₹${(Number(formData.totalBudget) || 0).toLocaleString()}`,
+                location: formData.geography || "Pan India",
+                deadline: "Dec 31, 2026",
+                description: formData.projObjectives || "A grassroots initiative for learning.",
+                beneficiaries: 10,
+                createdBy: user?.email || "",
+                fullDetails: {
+                    regDetails: formData.regDetails,
+                    orgEmail: formData.orgEmail,
+                    orgPhone: formData.orgPhone,
+                    expEducation: formData.expEducation,
+                    targetGroup: formData.targetGroup,
+                    expectedOutcomes: formData.expectedOutcomes,
+                    monitoringPlan: formData.monitoringPlan,
+                    projectDuration: formData.projectDuration,
+                    costBreakdown: formData.costBreakdown,
+                    disbursementPlan: formData.disbursementPlan,
+                    finSustainability: formData.finSustainability,
+                }
             }
+
+            await addIndividualProposal(newProposal)
+
+            setIsSuccess(true)
+
+            // Redirect back to individual proposals list after success
+            setTimeout(() => {
+                router.push("/individual-proposals")
+            }, 2000)
+        } catch (error) {
+            console.error("Failed to create proposal:", error)
+            setIsSubmitting(false)
+            // Could show error toast here
         }
-
-        addIndividualProposal(newProposal)
-
-        setIsSubmitting(false)
-        setIsSuccess(true)
-
-        // Redirect back to individual proposals list after success
-        setTimeout(() => {
-            router.push("/individual-proposals")
-        }, 2000)
+    }
     }
 
     // Custom File Upload Component helper

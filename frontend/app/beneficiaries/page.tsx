@@ -117,6 +117,10 @@ export default function BeneficiariesPage() {
   const [isSuccess, setIsSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Error states
+  const [partnershipError, setPartnershipError] = useState<string | null>(null)
+  const [profileError, setProfileError] = useState<string | null>(null)
+
   // Profile form state
   const [profilePhone, setProfilePhone] = useState("")
   const [profileLocation, setProfileLocation] = useState("")
@@ -138,9 +142,9 @@ export default function BeneficiariesPage() {
   const [partnershipsLoading, setPartnershipsLoading] = useState(false)
   const [acceptingId, setAcceptingId] = useState<string | null>(null)
 
-  // Filter proposals belonging to the logged-in user
+  // Filter proposals belonging to the logged-in user - primary check is email
   const myProposals = individualProposals.filter(
-    p => user && (p.createdBy === user.email || p.name === user.name || p.name === user.email?.split("@")[0])
+    p => user && user.email && p.createdBy === user.email
   )
 
   useEffect(() => {
@@ -148,7 +152,10 @@ export default function BeneficiariesPage() {
     setPartnershipsLoading(true)
     apiGetPartnershipsForUser(user.email)
       .then(setPartnerships)
-      .catch(() => { })
+      .catch((error) => {
+        console.error("Failed to load partnerships:", error)
+        // Keep existing partnerships on error
+      })
       .finally(() => setPartnershipsLoading(false))
   }, [user?.email])
 
@@ -165,10 +172,17 @@ export default function BeneficiariesPage() {
 
   async function handleAccept(partnershipId: string) {
     setAcceptingId(partnershipId)
+    setPartnershipError(null)
     try {
       const updated = await apiPartnerConfirm(partnershipId)
       setPartnerships(prev => prev.map(p => p.id === partnershipId ? updated : p))
-    } catch { }
+    } catch (error: any) {
+      const errorMsg = error?.message || "Failed to accept partnership"
+      console.error("Partnership acceptance error:", error)
+      setPartnershipError(errorMsg)
+      // Clear error after 4 seconds
+      setTimeout(() => setPartnershipError(null), 4000)
+    }
     finally { setAcceptingId(null) }
   }
 
@@ -209,12 +223,19 @@ export default function BeneficiariesPage() {
   async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault()
     setIsSavingProfile(true)
+    setProfileError(null)
     try {
       await updatePortfolio({ about: profileBio, contact: { phone: profilePhone, address: profileLocation } })
-    } catch { }
-    setIsSavingProfile(false)
-    setProfileSaved(true)
-    setTimeout(() => setProfileSaved(false), 2500)
+      setProfileSaved(true)
+      setTimeout(() => setProfileSaved(false), 2500)
+    } catch (error: any) {
+      const errorMsg = error?.message || "Failed to save profile"
+      console.error("Profile save error:", error)
+      setProfileError(errorMsg)
+    }
+    finally {
+      setIsSavingProfile(false)
+    }
   }
 
   if (!user || user.role !== "beneficiary") {

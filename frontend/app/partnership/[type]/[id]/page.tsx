@@ -83,6 +83,23 @@ function setPartnership(key: string, data: object) {
     if (typeof window !== "undefined") localStorage.setItem(key, JSON.stringify(data))
 }
 
+/* ─── Helper to safely get proposal info ─── */
+function getProposalInfo(proposal: any, proposalType: string) {
+    if (!proposal) return { name: "Unknown", createdBy: "", fundingRequired: "N/A" }
+    if (proposalType === "ngo") {
+        return {
+            name: (proposal as any).ngoName || "Unknown NGO",
+            createdBy: (proposal as any).createdBy || "",
+            fundingRequired: (proposal as any).fundingRequired || "N/A"
+        }
+    }
+    return {
+        name: (proposal as any).name || "Unknown Beneficiary",
+        createdBy: (proposal as any).createdBy || "",
+        fundingRequired: (proposal as any).fundingRequired || "N/A"
+    }
+}
+
 export default function PartnershipPage() {
     const params = useParams()
     const router = useRouter()
@@ -119,8 +136,7 @@ export default function PartnershipPage() {
     useEffect(() => {
         if (!proposal || !user) return
 
-        const partnerEmail = (proposal as any).createdBy || ""
-        const partnerName = type === "ngo" ? (proposal as any).ngoName : (proposal as any).name
+        const { name: partnerName, createdBy: partnerEmail } = getProposalInfo(proposal, type)
 
         const syncPartnership = () => {
             apiCreatePartnership({
@@ -143,7 +159,8 @@ export default function PartnershipPage() {
                     pship: p, 
                     docsVerified: p.docsVerified 
                 })
-            }).catch(() => {
+            }).catch((error) => {
+                console.error("Failed to sync partnership:", error)
                 const saved = getPartnership(storageKey)
                 if (saved.pship) setFullPartnership(saved.pship)
                 setFunderConfirmed(!!saved.funderConfirmed)
@@ -161,7 +178,6 @@ export default function PartnershipPage() {
         const interval = setInterval(syncPartnership, 10000)
 
         return () => clearInterval(interval)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [proposal, user, id, type, storageKey])
 
     const bothConfirmed = funderConfirmed && partnerConfirmed
@@ -232,7 +248,7 @@ export default function PartnershipPage() {
         )
     }
 
-    const proposalName = type === "ngo" ? (proposal as any).ngoName : (proposal as any).name
+    const proposalName = getProposalInfo(proposal, type).name
 
     return (
         <div className="flex min-h-screen flex-col bg-secondary/20">
@@ -293,7 +309,7 @@ export default function PartnershipPage() {
                                 {/* Quick stats */}
                                 <div className="flex-shrink-0 grid grid-cols-2 gap-3 min-w-[220px]">
                                     <div className="rounded-xl bg-white border border-border px-4 py-3 text-center shadow-sm">
-                                        <p className="text-base font-bold text-foreground">{(proposal as any).fundingRequired}</p>
+                                        <p className="text-base font-bold text-foreground">{getProposalInfo(proposal, type).fundingRequired}</p>
                                         <p className="text-xs text-muted-foreground">Funding Goal</p>
                                     </div>
                                     <div className="rounded-xl bg-white border border-border px-4 py-3 text-center shadow-sm">

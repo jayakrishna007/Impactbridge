@@ -96,21 +96,27 @@ export default function NGODashboardPage() {
     const [acceptingId, setAcceptingId] = useState<string | null>(null)
     const [selectedTab, setSelectedTab] = useState("projects")
 
-    // Filter proposals belonging to the logged-in NGO user
+    // Filter proposals belonging to the logged-in NGO user - primary check is email
     const managedProjects = ngoProposals.filter(
-        p => user && (p.createdBy === user.email || p.ngoName === user.name || p.ngoName === user.email?.split("@")[0])
+        p => user && user.email && p.createdBy === user.email
     )
 
     const [reports, setReports] = useState<any[]>([])
     const [portfolioProjects, setPortfolioProjects] = useState<any[]>([])
+    const [partnershipsError, setPartnershipsError] = useState<string | null>(null)
+    const [acceptError, setAcceptError] = useState<string | null>(null)
 
     // Load incoming partnership requests
     useEffect(() => {
         if (!user?.email) return
         setPartnershipsLoading(true)
+        setPartnershipsError(null)
         apiGetPartnershipsForUser(user.email)
             .then(setPartnerships)
-            .catch(() => { })
+            .catch((error) => {
+                console.error("Failed to load partnerships:", error)
+                setPartnershipsError(error?.message || "Failed to load partnerships")
+            })
             .finally(() => setPartnershipsLoading(false))
     }, [user?.email])
 
@@ -119,10 +125,16 @@ export default function NGODashboardPage() {
 
     async function handleAccept(partnershipId: string) {
         setAcceptingId(partnershipId)
+        setAcceptError(null)
         try {
             const updated = await apiPartnerConfirm(partnershipId)
             setPartnerships(prev => prev.map(p => p.id === partnershipId ? updated : p))
-        } catch { }
+        } catch (error: any) {
+            const errorMsg = error?.message || "Failed to accept partnership"
+            console.error("Partnership acceptance error:", error)
+            setAcceptError(errorMsg)
+            setTimeout(() => setAcceptError(null), 4000)
+        }
         finally { setAcceptingId(null) }
     }
 
