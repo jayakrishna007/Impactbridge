@@ -233,23 +233,39 @@ async def get_user(email: str):
 
 
 @app.put("/user/portfolio")
-async def update_portfolio(email: str, portfolio: PortfolioUpdate):
+async def update_portfolio(email: str = None, portfolio: PortfolioUpdate = None):
+    # Parse email from query parameter
+    if not email:
+        raise HTTPException(status_code=400, detail="Email query parameter is required")
+    if not portfolio:
+        raise HTTPException(status_code=400, detail="Portfolio data is required")
+    
     database  = db.get_db()
     users_col = database["users"]
     user = await users_col.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    current  = user.get("portfolio", {})
+    
+    # Build update object to avoid race condition
     new_data = portfolio.model_dump(exclude_unset=True)
-    if "contact" in new_data and "contact" in current:
-        current["contact"].update(new_data["contact"])
-        new_data["contact"] = current["contact"]
-    merged = {**current, **new_data}
-    await users_col.update_one(
+    update_obj = {**new_data}
+    
+    # Handle nested contact update
+    if "contact" in new_data:
+        current_contact = user.get("portfolio", {}).get("contact", {})
+        update_obj["contact"] = {**current_contact, **new_data["contact"]}
+    
+    # Atomic update operation
+    result = await users_col.find_one_and_update(
         {"email": email},
-        {"$set": {"portfolio": merged, "hasProfile": True}}
+        {"$set": {"portfolio": update_obj, "hasProfile": True}},
+        return_document=True
     )
-    return {"status": "success", "hasProfile": True, "portfolio": merged}
+    
+    if not result:
+        raise HTTPException(status_code=500, detail="Failed to update portfolio")
+    
+    return {"status": "success", "hasProfile": True, "portfolio": result.get("portfolio", {})}
 
 
 # ══════════════════════════════════════════════════════════════════════════

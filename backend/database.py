@@ -63,8 +63,10 @@ async def connect_db():
     except errors.ServerSelectionTimeoutError as e:
         print(f"❌ MongoDB Connection Timeout: {e}")
         print("💡 Tip: Check your IP Whitelist in MongoDB Atlas and your internet connection.")
+        raise
     except Exception as e:
         print(f"❌ MongoDB Connection Error: {e}")
+        raise
 
 
 async def close_db():
