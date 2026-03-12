@@ -361,7 +361,7 @@ export default function NGODashboardPage() {
                                                                 </div>
                                                                 <div className="flex gap-2 shrink-0">
                                                                     <Button size="sm" variant="outline" asChild>
-                                                                        <Link href={`/partnership/${p.proposalType}/${p.proposalId}`}>
+                                                                        <Link href={`/partnership/${p.proposalType}/${p.proposalId}?funderEmail=${encodeURIComponent(p.funderEmail)}`}>
                                                                             View Details
                                                                         </Link>
                                                                     </Button>
@@ -398,7 +398,7 @@ export default function NGODashboardPage() {
                                                                     <Badge className="mt-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-xs">🎉 Partnership Active</Badge>
                                                                 </div>
                                                                 <Button size="sm" variant="outline" className="shrink-0 gap-1.5" asChild>
-                                                                    <Link href={`/partnership/${p.proposalType}/${p.proposalId}`}>
+                                                                    <Link href={`/partnership/${p.proposalType}/${p.proposalId}?funderEmail=${encodeURIComponent(p.funderEmail)}`}>
                                                                         <ArrowRight className="h-3.5 w-3.5" /> Open Partnership
                                                                     </Link>
                                                                 </Button>

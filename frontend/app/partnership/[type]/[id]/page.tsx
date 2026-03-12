@@ -139,13 +139,26 @@ export default function PartnershipPage() {
         const { name: partnerName, createdBy: partnerEmail } = getProposalInfo(proposal, type)
 
         const syncInitialData = async () => {
+            const searchParams = new URLSearchParams(window.location.search)
+            const funderEmailParam = searchParams.get("funderEmail")
+            
+            // If user is funder and visiting directly, they are the funder.
+            // If user is NGO, they MUST have the funderEmail param from the dashboard link.
+            const activeFunderEmail = funderEmailParam || (user.role === "funder" ? user.email : "")
+            const activeFunderName = user.role === "funder" ? user.name : (funderEmailParam ? "Funder" : "")
+
+            if (!activeFunderEmail) {
+                console.warn("No funderEmail provided for partnership")
+                return null
+            }
+
             try {
                 const p = await apiCreatePartnership({
                     proposalId: id,
                     proposalType: type,
                     proposalTitle: proposal.title,
-                    funderEmail: user.email,
-                    funderName: user.name,
+                    funderEmail: activeFunderEmail,
+                    funderName: activeFunderName,
                     partnerEmail,
                     partnerName,
                 })

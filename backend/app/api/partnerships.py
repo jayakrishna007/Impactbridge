@@ -107,7 +107,7 @@ async def funder_confirm(partnership_id: str):
             notif_type     = "fund_interest",
             title          = "A Funder is Interested!",
             message        = f"{p.get('funderName', 'A funder')} is interested in funding \"{p.get('proposalTitle', 'your proposal')}\" and has confirmed on their end. Click here to review and accept the partnership.",
-            linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}",
+            linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}?funderEmail={p['funderEmail']}",
             linkLabel      = "Accept Partnership Now",
         )
 
@@ -138,7 +138,7 @@ async def partner_confirm(partnership_id: str):
             notif_type     = "partner_confirmed",
             title          = "🎉 Partnership Accepted!",
             message        = f"{p.get('partnerName', 'The organization')} accepted your partnership for \"{p.get('proposalTitle', 'the proposal')}\". Your partnership is now active!",
-            linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}",
+            linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}?funderEmail={p['funderEmail']}",
             linkLabel      = "View Active Partnership",
         )
 
