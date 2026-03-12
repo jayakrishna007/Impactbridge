@@ -48,9 +48,12 @@ export function ActiveDashboard({
     const messages = partnership?.messages || []
     const [newMessage, setNewMessage] = useState("")
     const chatEndRef = React.useRef<HTMLDivElement>(null)
+    const chatInputRef = React.useRef<HTMLInputElement>(null)
+    const chatFileRef = React.useRef<HTMLInputElement>(null)
 
-    const handleSendMessage = () => {
-        if (!newMessage.trim()) return
+    const handleSendMessage = (textOverride?: string) => {
+        const textToSend = textOverride || newMessage
+        if (!textToSend.trim()) return
 
         const now = new Date()
         let hour = now.getHours()
@@ -65,22 +68,36 @@ export function ActiveDashboard({
             sender: senderRole,
             name: senderName,
             initials: (senderName[0] || "U").toUpperCase(),
-            text: newMessage,
+            text: textToSend,
             time: `${hour}:${minute} ${ampm}`,
         }
 
         onSendMessage(newMsg)
-        setNewMessage("")
+        if (!textOverride) setNewMessage("")
         
         setTimeout(() => {
             chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
         }, 100)
     }
 
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // Simulate upload by sending a message
+        handleSendMessage(`📎 Uploaded document: ${file.name}`)
+        if (chatFileRef.current) chatFileRef.current.value = ""
+    }
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             handleSendMessage()
         }
+    }
+
+    const focusChat = () => {
+        chatInputRef.current?.focus()
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
 
     const handleScheduleMeeting = () => {
@@ -213,7 +230,7 @@ export function ActiveDashboard({
                     </Card>
 
                     {/* Partnership Chat */}
-                    <Card className="shadow-sm flex flex-col h-[400px]">
+                    <Card className="shadow-sm flex flex-col h-[400px]" id="partnership-chat">
                         <CardHeader className="py-4 border-b bg-muted/20">
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <MessageSquare className="h-5 w-5 text-primary" />
@@ -232,7 +249,14 @@ export function ActiveDashboard({
                                             </div>
                                             <div className="bg-primary text-primary-foreground border-primary rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm">
                                                 <p className="text-sm font-bold text-primary-foreground/80 mb-1">{msg.name} • You</p>
-                                                <p className="text-base text-white font-medium break-words">{msg.text}</p>
+                                                <div className="text-base text-white font-medium break-words">
+                                                    {msg.text.startsWith("📎") ? (
+                                                        <div className="flex items-center gap-2 bg-white/10 p-2 rounded-lg border border-white/20">
+                                                            <FileText className="h-4 w-4" />
+                                                            <span>{msg.text.replace("📎 ", "")}</span>
+                                                        </div>
+                                                    ) : msg.text}
+                                                </div>
                                                 <p className="text-xs font-semibold text-primary-foreground/80 text-right mt-2">{msg.time}</p>
                                             </div>
                                         </div>
@@ -243,7 +267,14 @@ export function ActiveDashboard({
                                             </div>
                                             <div className="bg-white border rounded-2xl rounded-tl-sm px-5 py-3 shadow-sm">
                                                 <p className="text-sm font-bold text-muted-foreground mb-1">{msg.name} • {msg.sender === "funder" ? "Funder" : "Partner"}</p>
-                                                <p className="text-base text-foreground space-y-1 break-words">{msg.text}</p>
+                                                <div className="text-base text-foreground space-y-1 break-words">
+                                                    {msg.text.startsWith("📎") ? (
+                                                        <div className="flex items-center gap-2 bg-secondary/50 p-2 rounded-lg border">
+                                                            <FileText className="h-4 w-4 text-primary" />
+                                                            <span className="font-bold">{msg.text.replace("📎 ", "")}</span>
+                                                        </div>
+                                                    ) : msg.text}
+                                                </div>
                                                 <p className="text-xs font-semibold text-muted-foreground text-right mt-2">{msg.time}</p>
                                             </div>
                                         </div>
@@ -253,15 +284,29 @@ export function ActiveDashboard({
                             </div>
                             <div className="p-4 border-t bg-white">
                                 <div className="flex gap-3">
-                                    <Button variant="outline" size="icon" className="shrink-0 h-12 w-12"><Paperclip className="h-5 w-5" /></Button>
+                                    <input 
+                                        type="file" 
+                                        className="hidden" 
+                                        ref={chatFileRef} 
+                                        onChange={handleFileUpload}
+                                    />
+                                    <Button 
+                                        variant="outline" 
+                                        size="icon" 
+                                        className="shrink-0 h-11 w-11"
+                                        onClick={() => chatFileRef.current?.click()}
+                                    >
+                                        <Paperclip className="h-5 w-5" />
+                                    </Button>
                                     <Input 
+                                        ref={chatInputRef}
                                         placeholder="Type a message..." 
-                                        className="flex-1 h-12 text-base font-medium" 
+                                        className="flex-1 h-11 text-base font-medium" 
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         onKeyDown={handleKeyDown}
                                     />
-                                    <Button onClick={handleSendMessage} size="icon" className="shrink-0 bg-primary h-12 w-12 hover:bg-primary/90">
+                                    <Button onClick={() => handleSendMessage()} size="icon" className="shrink-0 bg-primary h-11 w-11 hover:bg-primary/90">
                                         <Send className="h-5 w-5" />
                                     </Button>
                                 </div>
@@ -282,7 +327,11 @@ export function ActiveDashboard({
                             <Button className={`w-full justify-start gap-3 h-12 text-base font-bold ${docsVerified ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary cursor-not-allowed'}`} disabled={!docsVerified} onClick={docsVerified ? handleOpenMou : undefined}>
                                 {docsVerified ? <PenLine className="h-5 w-5" /> : <Lock className="h-5 w-5" />} View / Sign MOU
                             </Button>
-                            <Button variant="outline" className="w-full justify-start gap-3 h-12 text-base font-bold border-2">
+                            <Button 
+                                variant="outline" 
+                                className="w-full justify-start gap-3 h-12 text-base font-bold border-2"
+                                onClick={() => chatFileRef.current?.click()}
+                            >
                                 <FileUp className="h-5 w-5 text-muted-foreground" /> Upload Document
                             </Button>
                             <Dialog open={isMeetingDialogOpen} onOpenChange={setIsMeetingDialogOpen}>
@@ -357,7 +406,11 @@ export function ActiveDashboard({
                                     </div>
                                 </DialogContent>
                             </Dialog>
-                            <Button variant="outline" className="w-full justify-start gap-3 h-12 text-base font-bold border-2">
+                            <Button 
+                                variant="outline" 
+                                className="w-full justify-start gap-3 h-12 text-base font-bold border-2"
+                                onClick={focusChat}
+                            >
                                 <Camera className="h-5 w-5 text-muted-foreground" /> Post Field Update
                             </Button>
                         </CardContent>
@@ -378,37 +431,44 @@ export function ActiveDashboard({
                                     : "Complete the ongoing document verification process to unlock the MOU Agreement stage."}
                             </p>
                             {!docsVerified ? (
-                                <Dialog open={isUnlockDialogOpen} onOpenChange={setIsUnlockDialogOpen}>
-                                    <Button
-                                        onClick={() => setIsUnlockDialogOpen(true)}
-                                        className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base shadow-md"
-                                        size="lg"
-                                    >
-                                        Unlock MOU
-                                    </Button>
-                                    <DialogContent className="sm:max-w-md p-6">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-xl font-black">Unlock MOU</DialogTitle>
-                                            <DialogDescription className="text-base text-muted-foreground mt-2">
-                                                Are you sure you want to Unlock MOU? Unlocking MOU means Due Diligence is over between you and your partner.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="flex justify-end gap-3 mt-6">
-                                            <Button variant="outline" onClick={() => setIsUnlockDialogOpen(false)} className="font-bold">
-                                                No
-                                            </Button>
-                                            <Button 
-                                                onClick={() => {
-                                                    setIsUnlockDialogOpen(false)
-                                                    onVerifyDocs()
-                                                }} 
-                                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
-                                            >
-                                                Yes
-                                            </Button>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
+                                isFunder ? (
+                                    <Dialog open={isUnlockDialogOpen} onOpenChange={setIsUnlockDialogOpen}>
+                                        <Button
+                                            onClick={() => setIsUnlockDialogOpen(true)}
+                                            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base shadow-md"
+                                            size="lg"
+                                        >
+                                            Unlock MOU
+                                        </Button>
+                                        <DialogContent className="sm:max-w-md p-6">
+                                            <DialogHeader>
+                                                <DialogTitle className="text-xl font-black">Unlock MOU</DialogTitle>
+                                                <DialogDescription className="text-base text-muted-foreground mt-2">
+                                                    Are you sure you want to Unlock MOU? Unlocking MOU means Due Diligence is over between you and your partner.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <div className="flex justify-end gap-3 mt-6">
+                                                <Button variant="outline" onClick={() => setIsUnlockDialogOpen(false)} className="font-bold">
+                                                    No
+                                                </Button>
+                                                <Button 
+                                                    onClick={() => {
+                                                        setIsUnlockDialogOpen(false)
+                                                        onVerifyDocs()
+                                                    }} 
+                                                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                                                >
+                                                    Yes
+                                                </Button>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                ) : (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800 text-sm font-bold flex items-center gap-3">
+                                        <Lock className="h-5 w-5 shrink-0" />
+                                        <span>Awaiting funder to verify documents and unlock the MOU stage.</span>
+                                    </div>
+                                )
                             ) : (
                                 <Button
                                     onClick={handleOpenMou}

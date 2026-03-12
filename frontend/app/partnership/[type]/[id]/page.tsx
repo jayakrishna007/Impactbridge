@@ -115,47 +115,54 @@ export default function PartnershipPage() {
     const [currentView, setCurrentView] = useState<"dashboard" | "mou">("dashboard")
     const [docsVerified, setDocsVerified] = useState(false)
 
-    /* ─── Sync from backend on mount, fall back to localStorage ─── */
+    /* ─── Sync from backend on mount and via polling ─── */
     useEffect(() => {
         if (!proposal || !user) return
 
         const partnerEmail = (proposal as any).createdBy || ""
         const partnerName = type === "ngo" ? (proposal as any).ngoName : (proposal as any).name
 
-        apiCreatePartnership({
-            proposalId: id,
-            proposalType: type,
-            proposalTitle: proposal.title,
-            funderEmail: user.email,
-            funderName: user.name,
-            partnerEmail,
-            partnerName,
-        }).then(p => {
-            setFullPartnership(p)
-            setPartnershipId(p.id)
-            setFunderConfirmed(p.funderConfirmed)
-            setPartnerConfirmed(p.partnerConfirmed)
-            setDocsVerified(!!p.docsVerified)
-            // Still sync to localStorage as a cache/fallback
-            setPartnership(storageKey, { 
-                funderConfirmed: p.funderConfirmed, 
-                partnerConfirmed: p.partnerConfirmed, 
-                pship: p, 
-                docsVerified: p.docsVerified 
+        const syncPartnership = () => {
+            apiCreatePartnership({
+                proposalId: id,
+                proposalType: type,
+                proposalTitle: proposal.title,
+                funderEmail: user.email,
+                funderName: user.name,
+                partnerEmail,
+                partnerName,
+            }).then(p => {
+                setFullPartnership(p)
+                setPartnershipId(p.id)
+                setFunderConfirmed(p.funderConfirmed)
+                setPartnerConfirmed(p.partnerConfirmed)
+                setDocsVerified(!!p.docsVerified)
+                setPartnership(storageKey, { 
+                    funderConfirmed: p.funderConfirmed, 
+                    partnerConfirmed: p.partnerConfirmed, 
+                    pship: p, 
+                    docsVerified: p.docsVerified 
+                })
+            }).catch(() => {
+                const saved = getPartnership(storageKey)
+                if (saved.pship) setFullPartnership(saved.pship)
+                setFunderConfirmed(!!saved.funderConfirmed)
+                setPartnerConfirmed(!!saved.partnerConfirmed)
+                setDocsVerified(!!saved.docsVerified)
             })
-        }).catch(() => {
-            // Backend offline – fall back to localStorage
-            const saved = getPartnership(storageKey)
-            setFunderConfirmed(!!saved.funderConfirmed)
-            setPartnerConfirmed(!!saved.partnerConfirmed)
-            if (saved.pship) setFullPartnership(saved.pship)
-            setDocsVerified(!!saved.docsVerified)
-        }).finally(() => {
-            setMounted(true)
-            setTimeout(() => setNotifVisible(true), 800)
-        })
+        }
+
+        // Initial sync
+        syncPartnership()
+        setMounted(true)
+        setTimeout(() => setNotifVisible(true), 800)
+
+        // Poll every 10 seconds for "live" updates between users
+        const interval = setInterval(syncPartnership, 10000)
+
+        return () => clearInterval(interval)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [proposal, user])
+    }, [proposal, user, id, type, storageKey])
 
     const bothConfirmed = funderConfirmed && partnerConfirmed
     const confirmCount = (funderConfirmed ? 1 : 0) + (partnerConfirmed ? 1 : 0)
