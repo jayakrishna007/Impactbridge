@@ -44,10 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
-    // ── Rehydrate from localStorage on first render ────────────────────
+    // ── Rehydrate from sessionStorage on first render ────────────────────
     useEffect(() => {
         try {
-            const stored = localStorage.getItem("impactbridge_user")
+            const stored = sessionStorage.getItem("impactbridge_user")
             if (stored) setUser(JSON.parse(stored))
         } catch { }
         setIsLoading(false)
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 portfolio: userData.portfolio as User["portfolio"],
             }
             setUser(loggedIn)
-            localStorage.setItem("impactbridge_user", JSON.stringify(loggedIn))
+            sessionStorage.setItem("impactbridge_user", JSON.stringify(loggedIn))
             return { hasProfile: !!loggedIn.hasProfile }
 
         } catch (err: any) {
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             setUser(userToLogin)
-            localStorage.setItem("impactbridge_user", JSON.stringify(userToLogin))
+            sessionStorage.setItem("impactbridge_user", JSON.stringify(userToLogin))
             return { hasProfile: !!userToLogin.hasProfile }
         }
     }
@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Optimistic UI update
         setUser(updatedUser)
-        localStorage.setItem("impactbridge_user", JSON.stringify(updatedUser))
+        sessionStorage.setItem("impactbridge_user", JSON.stringify(updatedUser))
 
         try {
             // Persist to MongoDB via backend
@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // ── Logout ─────────────────────────────────────────────────────────
     const logout = () => {
         setUser(null)
-        localStorage.removeItem("impactbridge_user")
+        sessionStorage.removeItem("impactbridge_user")
     }
 
     return (
