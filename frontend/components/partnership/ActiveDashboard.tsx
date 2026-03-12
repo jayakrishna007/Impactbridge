@@ -230,15 +230,15 @@ export function ActiveDashboard({
                     </Card>
 
                     {/* Partnership Chat */}
-                    <Card className="shadow-sm flex flex-col h-[400px]" id="partnership-chat">
-                        <CardHeader className="py-4 border-b bg-muted/20">
+                    <Card className="shadow-sm flex flex-col h-[500px]" id="partnership-chat">
+                        <CardHeader className="py-4 border-b bg-muted/20 flex-shrink-0">
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <MessageSquare className="h-5 w-5 text-primary" />
                                 Partnership Chat
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="flex-1 p-0 flex flex-col">
-                            <div className="flex-1 p-5 space-y-5 overflow-y-auto bg-slate-50/50">
+                        <CardContent className="p-0 flex flex-col flex-1 overflow-hidden">
+                            <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-slate-50/50">
                                 {messages.map((msg: any, idx: number) => {
                                     const isSelf = isFunder ? msg.sender === "funder" : msg.sender === "partner"
                                     
@@ -282,7 +282,7 @@ export function ActiveDashboard({
                                 })}
                                 <div ref={chatEndRef} />
                             </div>
-                            <div className="p-4 border-t bg-white">
+                            <div className="p-4 border-t bg-white flex-shrink-0">
                                 <div className="flex gap-3">
                                     <input 
                                         type="file" 
@@ -411,7 +411,7 @@ export function ActiveDashboard({
                                 className="w-full justify-start gap-3 h-12 text-base font-bold border-2"
                                 onClick={focusChat}
                             >
-                                <Camera className="h-5 w-5 text-muted-foreground" /> Post Field Update
+                                <Camera className="h-5 w-5 text-muted-foreground" /> Post to Partnership Chat
                             </Button>
                         </CardContent>
                     </Card>
