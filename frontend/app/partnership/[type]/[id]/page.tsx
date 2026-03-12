@@ -132,22 +132,24 @@ export default function PartnershipPage() {
     const [currentView, setCurrentView] = useState<"dashboard" | "mou">("dashboard")
     const [docsVerified, setDocsVerified] = useState(false)
 
-    /* ─── Sync from backend on mount and via polling ─── */
+    /* ─── Sync from backend on mount ─── */
     useEffect(() => {
         if (!proposal || !user) return
 
         const { name: partnerName, createdBy: partnerEmail } = getProposalInfo(proposal, type)
 
-        const syncPartnership = () => {
-            apiCreatePartnership({
-                proposalId: id,
-                proposalType: type,
-                proposalTitle: proposal.title,
-                funderEmail: user.email,
-                funderName: user.name,
-                partnerEmail,
-                partnerName,
-            }).then(async (p) => {
+        const syncInitialData = async () => {
+            try {
+                const p = await apiCreatePartnership({
+                    proposalId: id,
+                    proposalType: type,
+                    proposalTitle: proposal.title,
+                    funderEmail: user.email,
+                    funderName: user.name,
+                    partnerEmail,
+                    partnerName,
+                })
+                
                 // Fetch associated messages from dedicated collection
                 const msgs = await apiGetChatMessages(p.id)
                 const partnershipWithMsgs = { ...p, messages: msgs }
@@ -163,25 +165,75 @@ export default function PartnershipPage() {
                     pship: partnershipWithMsgs, 
                     docsVerified: p.docsVerified 
                 })
-            }).catch((error) => {
+                return p.id
+            } catch (error) {
                 console.error("Failed to sync partnership:", error)
                 const saved = getPartnership(storageKey)
                 if (saved.pship) setFullPartnership(saved.pship)
                 setFunderConfirmed(!!saved.funderConfirmed)
                 setPartnerConfirmed(!!saved.partnerConfirmed)
                 setDocsVerified(!!saved.docsVerified)
-            })
+                return null
+            }
         }
 
-        // Initial sync
-        syncPartnership()
+        syncInitialData().then(pId => {
+            if (!pId) return
+
+            // ── WebSocket Setup ──
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+            const wsUrl = apiUrl.replace(/^http/, "ws") + `/ws/chat/${pId}`
+            
+            let socket: WebSocket | null = null
+            let reconnectInterval: any = null
+
+            const connectWS = () => {
+                socket = new WebSocket(wsUrl)
+
+                socket.onopen = () => {
+                    console.log("🔌 WebSocket Connected")
+                    if (reconnectInterval) clearInterval(reconnectInterval)
+                }
+
+                socket.onmessage = (event) => {
+                    const newMsg = JSON.parse(event.data)
+                    setFullPartnership((prev: any) => {
+                        if (!prev) return prev
+                        const existingMsgs = prev.messages || []
+                        // Check if message already exists (to avoid double entry with optimistic update)
+                        if (existingMsgs.some((m: any) => 
+                            m.text === newMsg.text && 
+                            m.time === newMsg.time && 
+                            m.sender === newMsg.sender &&
+                            m.createdAt === newMsg.createdAt
+                        )) {
+                            return prev
+                        }
+                        return { ...prev, messages: [...existingMsgs, newMsg] }
+                    })
+                }
+
+                socket.onclose = () => {
+                    console.log("🔌 WebSocket Disconnected. Reconnecting in 3s...")
+                    reconnectInterval = setTimeout(connectWS, 3000)
+                }
+
+                socket.onerror = (err) => {
+                    console.error("❌ WebSocket Error:", err)
+                    socket?.close()
+                }
+            }
+
+            connectWS()
+
+            return () => {
+                if (socket) socket.close()
+                if (reconnectInterval) clearInterval(reconnectInterval)
+            }
+        })
+
         setMounted(true)
         setTimeout(() => setNotifVisible(true), 800)
-
-        // Poll every 3 seconds for fast updates
-        const interval = setInterval(syncPartnership, 3000)
-
-        return () => clearInterval(interval)
     }, [proposal, user, id, type, storageKey])
 
     const bothConfirmed = funderConfirmed && partnerConfirmed
