@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { 
     apiCreatePartnership, apiFunderConfirm, apiPartnerConfirm, 
-    apiVerifyDocs, apiSendChat, apiGetChatMessages, ChatMessage 
+    apiVerifyDocs, apiSendChat, apiGetChatMessages, apiGetPartnershipsForUser, ChatMessage 
 } from "@/lib/api"
 import { ActiveDashboard } from "@/components/partnership/ActiveDashboard"
 import { MouSigning } from "@/components/partnership/MouSigning"
@@ -142,51 +142,90 @@ export default function PartnershipPage() {
             const searchParams = new URLSearchParams(window.location.search)
             const funderEmailParam = searchParams.get("funderEmail")
             
-            // If user is funder and visiting directly, they are the funder.
-            // If user is NGO/beneficiary, they MUST have the funderEmail param from the dashboard link.
-            const activeFunderEmail = funderEmailParam || (user.role === "funder" ? user.email : "")
-            const activeFunderName = user.role === "funder" ? user.name : (funderEmailParam ? "Funder" : "")
-
-            if (!activeFunderEmail) {
-                console.warn("No funderEmail provided for partnership")
-                return null
+            // ── FUNDER PATH: funder visits directly, they create/load the partnership ──
+            if (user.role === "funder") {
+                const activeFunderEmail = user.email
+                const activeFunderName = user.name
+                try {
+                    const p = await apiCreatePartnership({
+                        proposalId: id,
+                        proposalType: type,
+                        proposalTitle: proposal.title,
+                        funderEmail: activeFunderEmail,
+                        funderName: activeFunderName,
+                        partnerEmail,
+                        partnerName,
+                    })
+                    setPartnershipId(p.id)
+                    setFunderConfirmed(p.funderConfirmed)
+                    setPartnerConfirmed(p.partnerConfirmed)
+                    setDocsVerified(!!p.docsVerified)
+                    let msgs: any[] = []
+                    try { msgs = await apiGetChatMessages(p.id) } catch {}
+                    const partnershipWithMsgs = { ...p, messages: msgs }
+                    setFullPartnership(partnershipWithMsgs)
+                    setPartnership(storageKey, { funderConfirmed: p.funderConfirmed, partnerConfirmed: p.partnerConfirmed, pship: partnershipWithMsgs, docsVerified: p.docsVerified })
+                    return p.id
+                } catch (error) {
+                    console.error("Failed to create/load partnership:", error)
+                    return null
+                }
             }
 
+            // ── PARTNER PATH (NGO/Beneficiary): Look up partnership by their own email ──
+            // They may or may not have funderEmail in URL - try both approaches
+            let activeFunderEmail = funderEmailParam || ""
+
             try {
-                const p = await apiCreatePartnership({
-                    proposalId: id,
-                    proposalType: type,
-                    proposalTitle: proposal.title,
-                    funderEmail: activeFunderEmail,
-                    funderName: activeFunderName,
-                    partnerEmail,
-                    partnerName,
-                })
-                
-                // CRITICAL: Set ID immediately so chat input becomes active
-                setPartnershipId(p.id)
-                setFunderConfirmed(p.funderConfirmed)
-                setPartnerConfirmed(p.partnerConfirmed)
-                setDocsVerified(!!p.docsVerified)
-
-                // Fetch messages
-                let msgs: any[] = []
-                try {
-                    msgs = await apiGetChatMessages(p.id)
-                } catch (err) {
-                    console.error("Failed to fetch messages:", err)
+                if (activeFunderEmail) {
+                    // We have funderEmail - use it to load the exact partnership
+                    const p = await apiCreatePartnership({
+                        proposalId: id,
+                        proposalType: type,
+                        proposalTitle: proposal.title,
+                        funderEmail: activeFunderEmail,
+                        funderName: "Funder",
+                        partnerEmail,
+                        partnerName,
+                    })
+                    setPartnershipId(p.id)
+                    setFunderConfirmed(p.funderConfirmed)
+                    setPartnerConfirmed(p.partnerConfirmed)
+                    setDocsVerified(!!p.docsVerified)
+                    let msgs: any[] = []
+                    try { msgs = await apiGetChatMessages(p.id) } catch {}
+                    const partnershipWithMsgs = { ...p, messages: msgs }
+                    setFullPartnership(partnershipWithMsgs)
+                    setPartnership(storageKey, { funderConfirmed: p.funderConfirmed, partnerConfirmed: p.partnerConfirmed, pship: partnershipWithMsgs, docsVerified: p.docsVerified })
+                    return p.id
+                } else {
+                    // No funderEmail in URL — look up existing partnerships for this user's email
+                    // and find the one that matches this proposal
+                    const userEmailForLookup = partnerEmail || user.email
+                    if (!userEmailForLookup) {
+                        console.warn("Cannot determine user email for partnership lookup")
+                        return null
+                    }
+                    const allPartnerships = await apiGetPartnershipsForUser(userEmailForLookup)
+                    const matched = allPartnerships.find(
+                        p => p.proposalId === id && p.proposalType === type
+                    )
+                    if (matched) {
+                        setPartnershipId(matched.id)
+                        setFunderConfirmed(matched.funderConfirmed)
+                        setPartnerConfirmed(matched.partnerConfirmed)
+                        setDocsVerified(!!matched.docsVerified)
+                        let msgs: any[] = []
+                        try { msgs = await apiGetChatMessages(matched.id) } catch {}
+                        const partnershipWithMsgs = { ...matched, messages: msgs }
+                        setFullPartnership(partnershipWithMsgs)
+                        setPartnership(storageKey, { funderConfirmed: matched.funderConfirmed, partnerConfirmed: matched.partnerConfirmed, pship: partnershipWithMsgs, docsVerified: matched.docsVerified })
+                        return matched.id
+                    } else {
+                        console.warn("No existing partnership found for this user and proposal")
+                        return null
+                    }
                 }
-                
-                const partnershipWithMsgs = { ...p, messages: msgs }
-                setFullPartnership(partnershipWithMsgs)
-
-                setPartnership(storageKey, { 
-                    funderConfirmed: p.funderConfirmed, 
-                    partnerConfirmed: p.partnerConfirmed, 
-                    pship: partnershipWithMsgs, 
-                    docsVerified: p.docsVerified 
-                })
-                return p.id
             } catch (error) {
                 console.error("Failed to sync partnership:", error)
                 const saved = getPartnership(storageKey)
