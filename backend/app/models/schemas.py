@@ -67,3 +67,18 @@ class ChatMessage(BaseModel):
     text: str
     time: str
     createdAt: Optional[str] = None
+
+class FundInstallment(BaseModel):
+    label: str          # e.g. "Tranche 1"
+    amount: str         # e.g. "₹10,00,000"
+    dueDate: str        # ISO date string
+    milestone: Optional[str] = None  # e.g. "Q1 Report Submitted"
+    status: str = "pending"  # "pending" | "released" | "confirmed"
+
+class FundPlan(BaseModel):
+    totalAmount: str
+    installments: List[FundInstallment]
+    reportingStyles: List[str]   # ["mis", "quarterly", "annual", "realtime"]
+    reportingFrequency: Optional[str] = None
+    appliedAt: Optional[str] = None
+    appliedBy: Optional[str] = None

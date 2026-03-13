@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/dialog"
 import {
     CheckCircle2, ChevronRight, FileText, Send, Paperclip,
-    FileSearch, BarChart3, Clock, Lock, Unlock, PenLine, FileUp, Camera, MessageSquare, Plus, Video, Activity
+    FileSearch, BarChart3, Clock, Lock, Unlock, PenLine, FileUp, Camera, MessageSquare, Plus, Video, Activity,
+    Landmark
 } from "lucide-react"
 
 // ── Sub-component for Chat to isolate state and prevent jitter ──────────
@@ -158,7 +159,8 @@ export function ActiveDashboard({
     docsVerified,
     onVerifyDocs,
     onSendMessage,
-    handleOpenMou
+    handleOpenMou,
+    handleOpenFundRelease
 }: {
     partnership: any,
     user: any,
@@ -168,7 +170,8 @@ export function ActiveDashboard({
     docsVerified: boolean,
     onVerifyDocs: () => void,
     onSendMessage: (msg: any) => void,
-    handleOpenMou: () => void
+    handleOpenMou: () => void,
+    handleOpenFundRelease: () => void
 }) {
     const isFunder = user?.role === "funder"
 
@@ -282,12 +285,21 @@ export function ActiveDashboard({
                         )}
 
                         {/* Step 4 */}
-                        <div className="flex flex-col items-center gap-2 z-10">
-                            <div className="h-8 w-8 rounded-full bg-white border-2 border-border ring-4 ring-white flex items-center justify-center">
-                                <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
+                        {partnership?.partnerConfirmed && partnership?.funderConfirmed && docsVerified ? (
+                            <div className="flex flex-col items-center gap-2 z-10 cursor-pointer group" onClick={handleOpenFundRelease}>
+                                <div className="h-8 w-8 rounded-full bg-white border-2 border-border group-hover:border-blue-400 ring-4 ring-white flex items-center justify-center transition-colors">
+                                    <Landmark className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
+                                </div>
+                                <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground mt-1">Fund Release</span>
                             </div>
-                            <span className="text-sm font-bold text-muted-foreground mt-1">Fund Release</span>
-                        </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-2 z-10 opacity-60">
+                                <div className="h-8 w-8 rounded-full bg-secondary border-2 border-border ring-4 ring-white flex items-center justify-center">
+                                    <Lock className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                                <span className="text-sm font-bold text-muted-foreground mt-1">Fund Release</span>
+                            </div>
+                        )}
 
                         {/* Step 5 */}
                         <div className="flex flex-col items-center gap-2 z-10">
@@ -350,6 +362,15 @@ export function ActiveDashboard({
                             <Button className={`w-full justify-start gap-3 h-12 text-base font-bold ${docsVerified ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary cursor-not-allowed'}`} disabled={!docsVerified} onClick={docsVerified ? handleOpenMou : undefined}>
                                 {docsVerified ? <PenLine className="h-5 w-5" /> : <Lock className="h-5 w-5" />} View / Sign MOU
                             </Button>
+                            {isFunder && (
+                                <Button 
+                                    className={`w-full justify-start gap-3 h-12 text-base font-bold ${docsVerified ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary cursor-not-allowed'}`} 
+                                    disabled={!docsVerified} 
+                                    onClick={docsVerified ? handleOpenFundRelease : undefined}
+                                >
+                                    {docsVerified ? <Landmark className="h-5 w-5" /> : <Lock className="h-5 w-5" />} Fund Release & Reports
+                                </Button>
+                            )}
                             <Button
                                 variant="outline"
                                 className="w-full justify-start gap-3 h-12 text-base font-bold border-2"

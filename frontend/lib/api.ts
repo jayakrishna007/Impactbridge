@@ -343,4 +343,54 @@ export async function apiMarkAllRead(email: string): Promise<void> {
     await apiFetch(`/notifications/mark-all-read/${encodeURIComponent(email)}`, { method: "PUT" });
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// Fund Plan
+// ══════════════════════════════════════════════════════════════════════════
 
+export interface FundInstallment {
+    label: string;
+    amount: string;
+    dueDate: string;
+    milestone?: string;
+    status: "pending" | "released" | "confirmed";
+}
+
+export interface FundPlan {
+    exists?: boolean;
+    totalAmount: string;
+    installments: FundInstallment[];
+    reportingStyles: string[];
+    reportingFrequency?: string;
+    appliedAt?: string;
+    appliedBy?: string;
+}
+
+/** Get the current fund plan for a partnership. */
+export async function apiGetFundPlan(partnershipId: string): Promise<FundPlan | null> {
+    try {
+        const res = await apiFetch<FundPlan & { exists: boolean }>(`/partnerships/${partnershipId}/fund-plan`);
+        return res.exists ? res : null;
+    } catch {
+        return null;
+    }
+}
+
+/** Save or update the fund plan for a partnership. */
+export async function apiSaveFundPlan(partnershipId: string, plan: FundPlan): Promise<any> {
+    return apiFetch(`/partnerships/${partnershipId}/fund-plan`, {
+        method: "PUT",
+        body: JSON.stringify(plan),
+    });
+}
+
+/** Update the status of a specific installment. */
+export async function apiUpdateInstallmentStatus(
+    partnershipId: string,
+    index: number,
+    status: "pending" | "released" | "confirmed"
+): Promise<any> {
+    return apiFetch(`/partnerships/${partnershipId}/installment-status`, {
+        method: "PUT",
+        body: JSON.stringify({ index, status }),
+    });
+}

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 import uuid
 from datetime import datetime
 from typing import Dict, Any, List
-from app.models.schemas import PartnershipCreate, MouSignRequest, ChatMessage
+from app.models.schemas import PartnershipCreate, MouSignRequest, ChatMessage, FundPlan
 from app.database.mongodb import get_db
 from app.utils import clean, push_notification
 from app.websocket.chat_socket import manager
@@ -169,6 +169,71 @@ async def add_partnership_chat(partnership_id: str, message: ChatMessage):
     await manager.broadcast(clean(new_msg), partnership_id)
 
     return clean(p)
+
+@router.get("/{partnership_id}/fund-plan")
+async def get_fund_plan(partnership_id: str):
+    """Retrieve the fund release plan for a partnership."""
+    database = get_db()
+    p = await database["partnerships"].find_one({"id": partnership_id})
+    if not p:
+        raise HTTPException(status_code=404, detail="Partnership not found")
+    fund_plan = p.get("fundPlan")
+    if not fund_plan:
+        return {"exists": False}
+    return {"exists": True, **fund_plan}
+
+@router.put("/{partnership_id}/fund-plan")
+async def save_fund_plan(partnership_id: str, plan: FundPlan):
+    """Save or update the fund release plan for a partnership."""
+    database = get_db()
+    col = database["partnerships"]
+    p = await col.find_one({"id": partnership_id})
+    if not p:
+        raise HTTPException(status_code=404, detail="Partnership not found")
+
+    plan_data = plan.model_dump()
+    plan_data["appliedAt"] = datetime.utcnow().isoformat()
+
+    await col.update_one({"id": partnership_id}, {"$set": {"fundPlan": plan_data}})
+    updated = await col.find_one({"id": partnership_id})
+
+    # Notify partner that fund plan was configured
+    if p.get("partnerEmail"):
+        await push_notification(
+            database,
+            recipientEmail = p["partnerEmail"],
+            senderName     = p.get("funderName", "The Funder"),
+            notif_type     = "fund_plan",
+            title          = "📋 Fund Release Plan Configured!",
+            message        = f"{p.get('funderName', 'The funder')} has set up the fund release schedule with {len(plan.installments)} installments for \"{p.get('proposalTitle', 'your proposal')}\".",
+            linkHref       = f"/partnership/{p['proposalType']}/{p['proposalId']}?funderEmail={p['funderEmail']}",
+            linkLabel      = "View Fund Plan",
+        )
+
+    return clean(updated)
+
+@router.put("/{partnership_id}/installment-status")
+async def update_installment_status(partnership_id: str, data: dict):
+    """Update the status of a specific installment tranche."""
+    database = get_db()
+    col = database["partnerships"]
+    p = await col.find_one({"id": partnership_id})
+    if not p:
+        raise HTTPException(status_code=404, detail="Partnership not found")
+
+    index = data.get("index", -1)
+    new_status = data.get("status", "pending")
+    
+    fund_plan = p.get("fundPlan", {})
+    installments = fund_plan.get("installments", [])
+    
+    if 0 <= index < len(installments):
+        installments[index]["status"] = new_status
+        fund_plan["installments"] = installments
+        await col.update_one({"id": partnership_id}, {"$set": {"fundPlan": fund_plan}})
+
+    updated = await col.find_one({"id": partnership_id})
+    return clean(updated)
 
 @router.get("/{proposal_type}/{proposal_id}")
 async def get_partnership_for_proposal(proposal_type: str, proposal_id: str, funder_email: str):

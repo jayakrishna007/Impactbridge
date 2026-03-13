@@ -26,6 +26,7 @@ import {
 } from "@/lib/api"
 import { ActiveDashboard } from "@/components/partnership/ActiveDashboard"
 import { MouSigning } from "@/components/partnership/MouSigning"
+import { FundRelease } from "@/components/partnership/FundRelease"
 
 /* ─── Document lists ─── */
 const NGO_DOCS = [
@@ -129,7 +130,7 @@ export default function PartnershipPage() {
     const [requestText, setRequestText] = useState("")
     const [mounted, setMounted] = useState(false)
     const [fullPartnership, setFullPartnership] = useState<any>(null)
-    const [currentView, setCurrentView] = useState<"dashboard" | "mou">("dashboard")
+    const [currentView, setCurrentView] = useState<"dashboard" | "mou" | "fund-release">("dashboard")
     const [docsVerified, setDocsVerified] = useState(false)
 
     /* ─── Sync from backend on mount ─── */
@@ -754,6 +755,14 @@ export default function PartnershipPage() {
                         handleCloseMou={() => setCurrentView("dashboard")}
                         updatePartnership={(p) => setFullPartnership(p)}
                     />
+                ) : currentView === "fund-release" ? (
+                    <FundRelease
+                        partnership={fullPartnership}
+                        proposal={proposal}
+                        user={user}
+                        isFunder={user?.role === "funder"}
+                        onBack={() => setCurrentView("dashboard")}
+                    />
                 ) : (
                     <ActiveDashboard
                         partnership={fullPartnership}
@@ -765,6 +774,7 @@ export default function PartnershipPage() {
                         onVerifyDocs={handleVerifyDocs}
                         onSendMessage={handleSendMessage}
                         handleOpenMou={() => setCurrentView("mou")}
+                        handleOpenFundRelease={() => setCurrentView("fund-release")}
                     />
                 )}
             </main>
