@@ -143,7 +143,7 @@ export default function PartnershipPage() {
             const funderEmailParam = searchParams.get("funderEmail")
             
             // If user is funder and visiting directly, they are the funder.
-            // If user is NGO, they MUST have the funderEmail param from the dashboard link.
+            // If user is NGO/beneficiary, they MUST have the funderEmail param from the dashboard link.
             const activeFunderEmail = funderEmailParam || (user.role === "funder" ? user.email : "")
             const activeFunderName = user.role === "funder" ? user.name : (funderEmailParam ? "Funder" : "")
 
@@ -169,8 +169,8 @@ export default function PartnershipPage() {
                 setPartnerConfirmed(p.partnerConfirmed)
                 setDocsVerified(!!p.docsVerified)
 
-                // Try to fetch messages, but don't block the whole UI if it fails
-                let msgs = []
+                // Fetch messages
+                let msgs: any[] = []
                 try {
                     msgs = await apiGetChatMessages(p.id)
                 } catch (err) {
@@ -198,63 +198,83 @@ export default function PartnershipPage() {
             }
         }
 
+        let pollInterval: any = null
+        let socket: WebSocket | null = null
+        let wsReconnectTimeout: any = null
+
         syncInitialData().then(pId => {
             if (!pId) return
 
-            // ── WebSocket Setup ──
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-            const wsUrl = apiUrl.replace(/^http/, "ws") + `/ws/chat/${pId}`
-            
-            let socket: WebSocket | null = null
-            let reconnectInterval: any = null
-
-            const connectWS = () => {
-                socket = new WebSocket(wsUrl)
-
-                socket.onopen = () => {
-                    console.log("🔌 WebSocket Connected")
-                    if (reconnectInterval) clearInterval(reconnectInterval)
-                }
-
-                socket.onmessage = (event) => {
-                    const newMsg = JSON.parse(event.data)
+            // ── Polling: Primary mechanism for message sync (works on Render free tier) ──
+            // Poll every 3 seconds to fetch latest messages from DB
+            pollInterval = setInterval(async () => {
+                try {
+                    const latestMsgs = await apiGetChatMessages(pId)
                     setFullPartnership((prev: any) => {
                         if (!prev) return prev
-                        const existingMsgs = prev.messages || []
-                        // Check if message already exists (to avoid double entry with optimistic update)
-                        if (existingMsgs.some((m: any) => 
-                            m.text === newMsg.text && 
-                            m.time === newMsg.time && 
-                            m.sender === newMsg.sender &&
-                            m.createdAt === newMsg.createdAt
-                        )) {
-                            return prev
-                        }
-                        return { ...prev, messages: [...existingMsgs, newMsg] }
+                        return { ...prev, messages: latestMsgs }
                     })
+                } catch (err) {
+                    // silently ignore poll errors
                 }
+            }, 3000)
 
-                socket.onclose = () => {
-                    console.log("🔌 WebSocket Disconnected. Reconnecting in 3s...")
-                    reconnectInterval = setTimeout(connectWS, 3000)
-                }
+            // ── WebSocket: Enhancement for near-instant updates (if available) ──
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+            const wsUrl = apiUrl.replace(/^https/, "wss").replace(/^http/, "ws") + `/ws/chat/${pId}`
+            
+            const connectWS = () => {
+                try {
+                    socket = new WebSocket(wsUrl)
 
-                socket.onerror = (err) => {
-                    console.error("❌ WebSocket Error:", err)
-                    socket?.close()
+                    socket.onopen = () => {
+                        console.log("🔌 WebSocket Connected (bonus real-time layer)")
+                    }
+
+                    socket.onmessage = (event) => {
+                        try {
+                            const newMsg = JSON.parse(event.data)
+                            setFullPartnership((prev: any) => {
+                                if (!prev) return prev
+                                const existingMsgs = prev.messages || []
+                                // Skip if already in list (polling may have added it)
+                                if (existingMsgs.some((m: any) => 
+                                    m.text === newMsg.text && 
+                                    m.createdAt === newMsg.createdAt &&
+                                    m.sender === newMsg.sender
+                                )) {
+                                    return prev
+                                }
+                                return { ...prev, messages: [...existingMsgs, newMsg] }
+                            })
+                        } catch {}
+                    }
+
+                    socket.onclose = () => {
+                        console.log("🔌 WS closed — polling continues as fallback")
+                        // Attempt reconnect after 10s, but don't aggressively retry
+                        wsReconnectTimeout = setTimeout(connectWS, 10000)
+                    }
+
+                    socket.onerror = () => {
+                        socket?.close()
+                    }
+                } catch (err) {
+                    console.log("WebSocket not available — using polling only")
                 }
             }
 
             connectWS()
-
-            return () => {
-                if (socket) socket.close()
-                if (reconnectInterval) clearInterval(reconnectInterval)
-            }
         })
 
         setMounted(true)
         setTimeout(() => setNotifVisible(true), 800)
+
+        return () => {
+            if (pollInterval) clearInterval(pollInterval)
+            if (socket) socket.close()
+            if (wsReconnectTimeout) clearTimeout(wsReconnectTimeout)
+        }
     }, [proposal, user, id, type, storageKey])
 
     const bothConfirmed = funderConfirmed && partnerConfirmed
