@@ -521,11 +521,17 @@ export default function PartnershipPage() {
                                                     : <Handshake className="h-6 w-6 text-muted-foreground" />
                                                 }
                                             </div>
-                                            <p className="font-semibold text-sm text-foreground mb-1">Your Confirmation</p>
-                                            <p className="text-xs text-muted-foreground mb-3">
-                                                {funderConfirmed ? "Confirmed ✓" : "You haven't confirmed yet"}
+                                            <p className="font-semibold text-sm text-foreground mb-1">
+                                                {user?.role === "funder" ? "Your Confirmation" : "Funder's Confirmation"}
                                             </p>
-                                            {!funderConfirmed && (
+                                            <p className="text-xs text-muted-foreground mb-3">
+                                                {funderConfirmed 
+                                                    ? "Confirmed ✓" 
+                                                    : user?.role === "funder" 
+                                                        ? "You haven't confirmed yet" 
+                                                        : "Waiting for funder to confirm..."}
+                                            </p>
+                                            {!funderConfirmed && user?.role === "funder" && (
                                                 <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                                                     onClick={handleFunderConfirm}>
                                                     Confirm My Interest
@@ -541,19 +547,28 @@ export default function PartnershipPage() {
                                                     : <Clock className="h-6 w-6 text-muted-foreground" />
                                                 }
                                             </div>
-                                            <p className="font-semibold text-sm text-foreground mb-1">{proposalName}</p>
-                                            <p className="text-xs text-muted-foreground mb-3">
-                                                {partnerConfirmed ? "Accepted ✓" : "Waiting for their acceptance..."}
+                                            <p className="font-semibold text-sm text-foreground mb-1">
+                                                {user?.role === "funder" ? proposalName : "Your Confirmation"}
                                             </p>
-                                            {/* Demo button — in production this would be on NGO/beneficiary's dashboard */}
-                                            {!partnerConfirmed && funderConfirmed && (
+                                            <p className="text-xs text-muted-foreground mb-3">
+                                                {partnerConfirmed 
+                                                    ? "Accepted ✓" 
+                                                    : user?.role !== "funder" 
+                                                        ? "You haven't accepted yet" 
+                                                        : "Waiting for their acceptance..."}
+                                            </p>
+                                            {!partnerConfirmed && user?.role !== "funder" && (
+                                                <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                                                    onClick={handlePartnerConfirm}>
+                                                    Accept Partnership
+                                                </Button>
+                                            )}
+                                            {/* Demo button for Funder to simulate partner if needed */}
+                                            {!partnerConfirmed && user?.role === "funder" && funderConfirmed && (
                                                 <Button size="sm" variant="outline" className="w-full text-xs border-dashed"
                                                     onClick={handlePartnerConfirm}>
                                                     [Demo] Simulate Their Acceptance
                                                 </Button>
-                                            )}
-                                            {!funderConfirmed && (
-                                                <p className="text-xs text-muted-foreground italic">Confirm your side first</p>
                                             )}
                                         </div>
                                     </div>
