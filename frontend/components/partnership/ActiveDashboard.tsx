@@ -517,7 +517,7 @@ export function ActiveDashboard({
                                 ) : (
                                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800 text-sm font-bold flex items-center gap-3">
                                         <Lock className="h-5 w-5 shrink-0" />
-                                        <span>Awaiting funder to verify documents and unlock the MOU stage.</span>
+                                        <span>Awaiting document verification to unlock the MOU stage.</span>
                                     </div>
                                 )
                             ) : (

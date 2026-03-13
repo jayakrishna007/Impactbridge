@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, ChevronLeft, ShieldCheck, PenLine, Download, UploadCloud, FileUp, FileText, AlertCircle } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ShieldCheck, PenLine, Download, UploadCloud, FileUp, FileText, AlertCircle, ChevronRight } from "lucide-react"
 import { apiSignMou, apiUploadMou } from "@/lib/api"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -15,6 +15,7 @@ export function MouSigning({
     proposal,
     entityLabel,
     handleCloseMou,
+    handleOpenFundRelease,
     updatePartnership
 }: {
     partnership: any,
@@ -22,6 +23,7 @@ export function MouSigning({
     proposal: any,
     entityLabel: string,
     handleCloseMou: () => void,
+    handleOpenFundRelease: () => void,
     updatePartnership: (newPship: any) => void
 }) {
     const isFunder = user?.role === "funder"
@@ -247,6 +249,50 @@ export function MouSigning({
                             )}
                         </div>
                     </div>
+
+                    {/* Both Signed Success Area & Next Steps */}
+                    {signatures.funder && signatures.partner && (
+                        <div className="mt-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
+                            <div className="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-1/4 -translate-y-1/4">
+                                <ShieldCheck className="w-48 h-48" />
+                            </div>
+                            <div className="relative z-10 flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="bg-white/20 p-2 rounded-full">
+                                        <CheckCircle2 className="h-6 w-6 text-white" />
+                                    </div>
+                                    <h3 className="text-xl font-black">MOU Fully Executed</h3>
+                                </div>
+                                <p className="text-emerald-50 text-sm max-w-xl leading-relaxed">
+                                    This partnership agreement is now legally binding and active. The next stage is Fund Release and Reporting configuration.
+                                </p>
+                            </div>
+                            <div className="relative z-10 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                                <Button 
+                                    variant="outline" 
+                                    onClick={handleCloseMou}
+                                    className="bg-transparent border-white/30 text-white hover:bg-white/10 font-bold"
+                                >
+                                    Later
+                                </Button>
+                                {isFunder ? (
+                                    <Button 
+                                        onClick={handleOpenFundRelease}
+                                        className="bg-white text-emerald-700 hover:bg-white/90 font-black shadow-md flex items-center gap-2"
+                                    >
+                                        Proceed to Fund Release <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                ) : (
+                                    <Button 
+                                        onClick={handleCloseMou}
+                                        className="bg-white text-emerald-700 hover:bg-white/90 font-black shadow-md"
+                                    >
+                                        Return to Dashboard
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* ── Right Column (Sidebar) ── */}

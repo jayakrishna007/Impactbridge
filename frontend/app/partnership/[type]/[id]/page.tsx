@@ -768,6 +768,7 @@ export default function PartnershipPage() {
                         proposal={proposal}
                         entityLabel={entityLabel}
                         handleCloseMou={() => setCurrentView("dashboard")}
+                        handleOpenFundRelease={() => setCurrentView("fund-release")}
                         updatePartnership={(p) => setFullPartnership(p)}
                     />
                 ) : currentView === "fund-release" ? (
