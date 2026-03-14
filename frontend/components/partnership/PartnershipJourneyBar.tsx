@@ -94,22 +94,20 @@ export function PartnershipJourneyBar({
         return false
     }
 
-    /** Determine if a step is the "current" active one */
+    /** Determine if a step is the "current" active one (for styling the button) */
     function isActive(idx: number): boolean {
-        if (idx === 0 && currentView === "dashboard" && !bothConfirmed) return false
-        if (idx === 0 && currentView === "dashboard" && !docsVerified) return true
-        if (idx === 1 && currentView === "dashboard" && bothConfirmed && !docsVerified) return true
+        // We just highlight the node corresponding to the page they are sitting on
         if (idx === 2 && currentView === "mou") return true
         if (idx === 3 && currentView === "fund-release") return true
         if (idx === 4 && currentView === "fund-release") return true
+        if ((idx === 0 || idx === 1) && currentView === "dashboard") return true
         return false
     }
 
-    /** Is step "done" (past it) */
+    /** Is step "done" (past it) - based purely on backend state, NOT current view */
     function isDone(idx: number): boolean {
         if (idx === 0 && bothConfirmed) return true
         if (idx === 1 && docsVerified) return true
-        if (idx === 2 && docsVerified && (currentView === "fund-release")) return true
         return false
     }
 
@@ -122,7 +120,7 @@ export function PartnershipJourneyBar({
                         Partnership Journey
                     </h3>
                     <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                        {docsVerified ? (currentView === "fund-release" ? "Funding & Reports" : currentView === "mou" ? "MOU Signing" : "Active") : bothConfirmed ? "Doc Verification" : "Awaiting Confirmation"}
+                        {docsVerified ? "Active" : bothConfirmed ? "Doc Verification" : "Awaiting Confirmation"}
                     </span>
                 </div>
 
@@ -131,19 +129,15 @@ export function PartnershipJourneyBar({
                     {/* Background track */}
                     <div className="absolute top-4 left-0 w-full h-1 bg-secondary rounded-full -translate-y-1/2" />
 
-                    {/* Filled progress */}
+                    {/* Filled progress (based on actual state, not view) */}
                     <div
                         className="absolute top-4 left-0 h-1 bg-emerald-500 rounded-full -translate-y-1/2 transition-all duration-700"
                         style={{
                             width: !bothConfirmed
-                                ? "0%"
+                                ? "0%"             // at step 0
                                 : !docsVerified
-                                    ? "20%"
-                                    : currentView === "mou"
-                                        ? "50%"
-                                        : currentView === "fund-release"
-                                            ? "80%"
-                                            : "25%"
+                                    ? "25%"        // at step 1
+                                    : "50%"        // at step 2 (MOU verification next)
                         }}
                     />
 
