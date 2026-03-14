@@ -8,7 +8,11 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, MapPin, Calendar, HeartPulse, GraduationCap, Building, Target, BookOpen, Users, IndianRupee, Landmark } from "lucide-react"
+import {
+    ArrowLeft, MapPin, Calendar, Building, Users,
+    Handshake, ChevronRight
+} from "lucide-react"
+import Link from "next/link"
 
 export default function CSRProjectDetailPage() {
     const params = useParams()
@@ -16,9 +20,7 @@ export default function CSRProjectDetailPage() {
     const { user } = useAuth()
     const { csrProjects } = useProposals()
 
-    // Safety check for params type
     const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : ''
-
     const project = csrProjects.find(p => p.id === id)
 
     if (!project) {
@@ -29,15 +31,13 @@ export default function CSRProjectDetailPage() {
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight mb-2">Project Not Found</h2>
                         <p className="text-muted-foreground mb-6">The CSR project you are looking for does not exist or has been removed.</p>
-                        <Button onClick={() => router.push("/csr-projects")}>Back to Projects</Button>
+                        <Button onClick={() => router.back()}>Go Back</Button>
                     </div>
                 </main>
                 <Footer />
             </div>
         )
     }
-
-    const Icon = project.icon
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -50,9 +50,9 @@ export default function CSRProjectDetailPage() {
                             variant="ghost"
                             size="sm"
                             className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
-                            onClick={() => router.push("/csr-projects")}
+                            onClick={() => router.back()}
                         >
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
 
                         <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -74,7 +74,7 @@ export default function CSRProjectDetailPage() {
                 </div>
 
                 {/* Content Grid */}
-                <div className="mx-auto max-w-4xl px-6 -mt-8">
+                <div className="mx-auto max-w-4xl px-6 mt-8">
                     <div className="grid gap-8 md:grid-cols-3">
                         {/* Main Details */}
                         <div className="md:col-span-2 space-y-8">
@@ -89,8 +89,8 @@ export default function CSRProjectDetailPage() {
                                     <p className="text-muted-foreground leading-relaxed mt-4">
                                         This corporate social responsibility project focuses on widespread, scalable impact.
                                         By leveraging corporate resources and strategic partnerships, the initiative aims to
-                                        create sustained educational improvements in the target region. The project includes
-                                        rigorous monitoring and evaluation frameworks to ensure funds are utilized effectively
+                                        create sustained improvements in the target region. The project includes rigorous
+                                        monitoring and evaluation frameworks to ensure funds are utilized effectively
                                         and tangible outcomes are achieved.
                                     </p>
                                 </CardContent>
@@ -125,6 +125,7 @@ export default function CSRProjectDetailPage() {
 
                         {/* Sidebar */}
                         <div className="space-y-6">
+                            {/* Fund Progress */}
                             <Card className="shadow-sm border-primary/20">
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-between text-sm mb-2">
@@ -146,6 +147,7 @@ export default function CSRProjectDetailPage() {
                                 </CardContent>
                             </Card>
 
+                            {/* Funder Details */}
                             <Card className="shadow-sm">
                                 <CardHeader>
                                     <CardTitle>Funder Details</CardTitle>
@@ -162,6 +164,29 @@ export default function CSRProjectDetailPage() {
                                     </div>
                                 </CardContent>
                             </Card>
+
+                            {/* Fund this Project — visible to logged-in funders only */}
+                            {user?.role === "funder" && (
+                                <Card className="shadow-sm border-2 border-emerald-200 bg-emerald-50/30">
+                                    <CardContent className="p-5 flex flex-col gap-3 text-center">
+                                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                                            <Handshake className="h-6 w-6 text-emerald-600" />
+                                        </div>
+                                        <p className="font-semibold text-foreground">Interested in this project?</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Browse our proposals to find the right partner and start the funding journey.
+                                        </p>
+                                        <Button
+                                            className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                                            asChild
+                                        >
+                                            <Link href="/companies-list">
+                                                Browse Proposals <ChevronRight className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     </div>
                 </div>

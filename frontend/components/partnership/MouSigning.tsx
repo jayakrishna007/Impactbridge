@@ -275,21 +275,12 @@ export function MouSigning({
                                 >
                                     Later
                                 </Button>
-                                {isFunder ? (
-                                    <Button 
-                                        onClick={handleOpenFundRelease}
-                                        className="bg-white text-emerald-700 hover:bg-white/90 font-black shadow-md flex items-center gap-2"
-                                    >
-                                        Proceed to Fund Release <ChevronRight className="h-4 w-4" />
-                                    </Button>
-                                ) : (
-                                    <Button 
-                                        onClick={handleCloseMou}
-                                        className="bg-white text-emerald-700 hover:bg-white/90 font-black shadow-md"
-                                    >
-                                        Return to Dashboard
-                                    </Button>
-                                )}
+                                <Button 
+                                    onClick={handleOpenFundRelease}
+                                    className="bg-white text-emerald-700 hover:bg-white/90 font-black shadow-md flex items-center gap-2"
+                                >
+                                    Proceed to Funding & Reports <ChevronRight className="h-4 w-4" />
+                                </Button>
                             </div>
                         </div>
                     )}

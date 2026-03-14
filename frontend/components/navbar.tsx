@@ -66,8 +66,8 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={`relative px-3 py-2 text-sm font-medium rounded-md transition-all duration-150 ${active
-                    ? "text-white bg-white/20"
-                    : "text-blue-100 hover:text-white hover:bg-white/10"
+                  ? "text-white bg-white/20"
+                  : "text-blue-100 hover:text-white hover:bg-white/10"
                   }`}
               >
                 {link.label}
@@ -82,8 +82,8 @@ export function Navbar() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-150 ${pathname.startsWith("/companies-list")
-                  ? "text-white bg-white/20"
-                  : "text-blue-100 hover:text-white hover:bg-white/10"
+                ? "text-white bg-white/20"
+                : "text-blue-100 hover:text-white hover:bg-white/10"
                 }`}>
                 Companies List <ChevronDown className="h-4 w-4" />
               </button>
@@ -107,8 +107,8 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-150 ${pathname.startsWith("/products") || pathname.startsWith("/services")
-                    ? "text-white bg-white/20"
-                    : "text-blue-100 hover:text-white hover:bg-white/10"
+                  ? "text-white bg-white/20"
+                  : "text-blue-100 hover:text-white hover:bg-white/10"
                   }`}>
                   Products &amp; Services <ChevronDown className="h-4 w-4" />
                 </button>
@@ -128,8 +128,8 @@ export function Navbar() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-150 ${pathname.startsWith("/about-us") || pathname.startsWith("/board-of-advisors")
-                  ? "text-white bg-white/20"
-                  : "text-blue-100 hover:text-white hover:bg-white/10"
+                ? "text-white bg-white/20"
+                : "text-blue-100 hover:text-white hover:bg-white/10"
                 }`}>
                 About Us <ChevronDown className="h-4 w-4" />
               </button>
@@ -149,8 +149,8 @@ export function Navbar() {
             <Link
               href={getDashboardPath(user.role)}
               className={`px-3 py-2 text-sm font-semibold rounded-md transition-all duration-150 relative ${pathname.startsWith("/funders") || pathname.startsWith("/ngo-dashboard") || pathname.startsWith("/beneficiaries")
-                  ? "text-white bg-white/20"
-                  : "text-yellow-300 hover:text-white hover:bg-white/10"
+                ? "text-white bg-white/20"
+                : "text-yellow-300 hover:text-white hover:bg-white/10"
                 }`}
             >
               My Dashboard
@@ -287,8 +287,8 @@ export function Navbar() {
               <Link
                 href={getDashboardPath(user.role)}
                 className={`rounded-md px-3 py-2.5 text-sm font-semibold transition-colors mt-1 ${pathname.startsWith("/funders") || pathname.startsWith("/ngo-dashboard") || pathname.startsWith("/beneficiaries")
-                    ? "bg-white/20 text-white"
-                    : "text-yellow-300 hover:bg-white/10 hover:text-white"
+                  ? "bg-white/20 text-white"
+                  : "text-yellow-300 hover:bg-white/10 hover:text-white"
                   }`}
                 onClick={() => setMobileOpen(false)}
               >

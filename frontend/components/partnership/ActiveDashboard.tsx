@@ -237,80 +237,6 @@ export function ActiveDashboard({
     return (
         <div className="mx-auto max-w-5xl px-6 pt-8 pb-16 space-y-8">
 
-            {/* Step Tracker */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-border">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-2xl" style={{ fontFamily: "var(--font-heading)" }}>Partnership Journey</h3>
-                    <span className="text-sm font-bold text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-2 border border-emerald-200">
-                        <Activity className="h-4 w-4" /> Track 4381
-                    </span>
-                </div>
-
-                <div className="relative mt-8">
-                    <div className="absolute top-1/2 left-0 w-full h-1 bg-secondary -translate-y-1/2 rounded-full" />
-                    <div className="absolute top-1/2 left-0 w-[40%] h-1 bg-emerald-500 -translate-y-1/2 rounded-full transition-all duration-1000" />
-
-                    <div className="relative flex justify-between">
-                        {/* Step 1 */}
-                        <div className="flex flex-col items-center gap-2 z-10">
-                            <div className="h-8 w-8 rounded-full bg-emerald-500 ring-4 ring-white flex items-center justify-center">
-                                <CheckCircle2 className="h-5 w-5 text-white" />
-                            </div>
-                            <span className="text-sm font-bold text-emerald-700 mt-1">Confirmation</span>
-                        </div>
-
-                        {/* Step 2 */}
-                        <div className="flex flex-col items-center gap-2 z-10 w-28">
-                            <div className="h-8 w-8 rounded-full bg-blue-600 ring-4 ring-blue-100 flex items-center justify-center animate-pulse shadow-[0_0_0_4px_rgba(37,99,235,0.2)]">
-                                <FileSearch className="h-4 w-4 text-white" />
-                            </div>
-                            <span className="text-sm font-extrabold text-blue-700 text-center leading-tight mt-1">Document Verification</span>
-                        </div>
-
-                        {/* Step 3 */}
-                        {docsVerified ? (
-                            <div className="flex flex-col items-center gap-2 z-10 cursor-pointer group" onClick={handleOpenMou}>
-                                <div className="h-8 w-8 rounded-full bg-white border-2 border-border group-hover:border-purple-300 ring-4 ring-white flex items-center justify-center transition-colors">
-                                    <PenLine className="h-4 w-4 text-muted-foreground group-hover:text-purple-600" />
-                                </div>
-                                <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground mt-1">MOU Signing</span>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center gap-2 z-10 opacity-60">
-                                <div className="h-8 w-8 rounded-full bg-secondary border-2 border-border ring-4 ring-white flex items-center justify-center">
-                                    <Lock className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                <span className="text-sm font-bold text-muted-foreground mt-1">MOU Signing</span>
-                            </div>
-                        )}
-
-                        {/* Step 4 */}
-                        {partnership?.partnerConfirmed && partnership?.funderConfirmed && docsVerified ? (
-                            <div className="flex flex-col items-center gap-2 z-10 cursor-pointer group" onClick={handleOpenFundRelease}>
-                                <div className="h-8 w-8 rounded-full bg-white border-2 border-border group-hover:border-blue-400 ring-4 ring-white flex items-center justify-center transition-colors">
-                                    <Landmark className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
-                                </div>
-                                <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground mt-1">Fund Release</span>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center gap-2 z-10 opacity-60">
-                                <div className="h-8 w-8 rounded-full bg-secondary border-2 border-border ring-4 ring-white flex items-center justify-center">
-                                    <Lock className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                <span className="text-sm font-bold text-muted-foreground mt-1">Fund Release</span>
-                            </div>
-                        )}
-
-                        {/* Step 5 */}
-                        <div className="flex flex-col items-center gap-2 z-10">
-                            <div className="h-8 w-8 rounded-full bg-white border-2 border-border ring-4 ring-white flex items-center justify-center">
-                                <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
-                            </div>
-                            <span className="text-sm font-bold text-muted-foreground mt-1">Reports Tracking</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
 
@@ -362,15 +288,13 @@ export function ActiveDashboard({
                             <Button className={`w-full justify-start gap-3 h-12 text-base font-bold ${docsVerified ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary cursor-not-allowed'}`} disabled={!docsVerified} onClick={docsVerified ? handleOpenMou : undefined}>
                                 {docsVerified ? <PenLine className="h-5 w-5" /> : <Lock className="h-5 w-5" />} View / Sign MOU
                             </Button>
-                            {isFunder && (
-                                <Button 
-                                    className={`w-full justify-start gap-3 h-12 text-base font-bold ${docsVerified ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary cursor-not-allowed'}`} 
-                                    disabled={!docsVerified} 
-                                    onClick={docsVerified ? handleOpenFundRelease : undefined}
-                                >
-                                    {docsVerified ? <Landmark className="h-5 w-5" /> : <Lock className="h-5 w-5" />} Fund Release & Reports
-                                </Button>
-                            )}
+                            <Button 
+                                className={`w-full justify-start gap-3 h-12 text-base font-bold ${docsVerified ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary cursor-not-allowed'}`} 
+                                disabled={!docsVerified} 
+                                onClick={docsVerified ? handleOpenFundRelease : undefined}
+                            >
+                                {docsVerified ? <Landmark className="h-5 w-5" /> : <Lock className="h-5 w-5" />} Funding & Reports
+                            </Button>
                             <Button
                                 variant="outline"
                                 className="w-full justify-start gap-3 h-12 text-base font-bold border-2"

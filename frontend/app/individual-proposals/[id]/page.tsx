@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
@@ -61,7 +61,7 @@ export default function IndividualProposalDetailPage() {
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight mb-2">Proposal Not Found</h2>
                         <p className="text-muted-foreground mb-6">The proposal you are looking for does not exist or has been removed.</p>
-                        <Button onClick={() => router.push("/individual-proposals")}>Back to Proposals</Button>
+                        <Button onClick={() => router.back()}>Back</Button>
                     </div>
                 </main>
                 <Footer />
@@ -79,8 +79,8 @@ export default function IndividualProposalDetailPage() {
                 <div className="bg-primary/5 border-b border-border pt-12 pb-8 px-6">
                     <div className="mx-auto max-w-4xl">
                         <Button variant="ghost" size="sm" className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
-                            onClick={() => router.push("/individual-proposals")}>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Proposals
+                            onClick={() => router.back()}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
 
                         <div className="flex flex-wrap items-center gap-3 mb-4">

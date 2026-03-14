@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { apiGetPartnershipsForUser, type PartnershipData } from "@/lib/api"
 import { Progress } from "@/components/ui/progress"
 import {
   DollarSign,
@@ -21,6 +23,8 @@ import {
   AlertCircle,
   FileText,
   GraduationCap,
+  ArrowRight,
+  Handshake,
   Landmark,
   Building,
   IndianRupee,
@@ -28,7 +32,6 @@ import {
   Upload,
   FileUp,
   Sparkles,
-  ArrowRight,
   Loader2,
   Phone,
   MapPin,
@@ -112,8 +115,21 @@ export default function FundersPage() {
   } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Empty states for new users
-  const [fundedProjects, setFundedProjects] = useState<any[]>([])
+  // Load real partnerships from DB
+  const [fundedProjects, setFundedProjects] = useState<PartnershipData[]>([])
+  const [partnershipsLoading, setPartnershipsLoading] = useState(false)
+
+  useEffect(() => {
+    if (!user?.email) return
+    setPartnershipsLoading(true)
+    apiGetPartnershipsForUser(user.email)
+      .then(all => {
+        // Only show partnerships where both sides confirmed (active)
+        setFundedProjects(all.filter(p => p.funderConfirmed && p.partnerConfirmed))
+      })
+      .catch(console.error)
+      .finally(() => setPartnershipsLoading(false))
+  }, [user?.email])
 
   // States for reports filtering
   const [reportFilter, setReportFilter] = useState<string>("all")
@@ -296,18 +312,36 @@ export default function FundersPage() {
                 </div>
 
                 <div className="mt-8">
-                  <h4 className="text-md font-semibold mb-4">Supported Projects</h4>
-                  {fundedProjects.length > 0 ? (
-                    <div className="grid gap-6 lg:grid-cols-2">
-                      {fundedProjects.map((project) => (
-                        <Card key={project.id} className="border-border bg-card">
-                          {/* ... project card content ... */}
+                  <h4 className="text-md font-semibold mb-4">Active Partnerships</h4>
+                  {partnershipsLoading ? (
+                    <div className="p-12 text-center text-muted-foreground italic">Loading partnerships…</div>
+                  ) : fundedProjects.length > 0 ? (
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      {fundedProjects.map((p) => (
+                        <Card key={p.id} className="border-emerald-200 bg-emerald-50/30 hover:shadow-md transition-shadow">
+                          <CardContent className="p-5 flex flex-col gap-3">
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
+                                <Handshake className="h-5 w-5 text-emerald-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-foreground truncate">{p.proposalTitle}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">Partner: <span className="font-medium text-foreground">{p.partnerName}</span></p>
+                              </div>
+                              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-xs shrink-0">Active</Badge>
+                            </div>
+                            <Button size="sm" variant="outline" className="w-full gap-1.5 border-emerald-200 hover:bg-emerald-50" asChild>
+                              <Link href={`/partnership/${p.proposalType}/${p.proposalId}`}>
+                                <ArrowRight className="h-3.5 w-3.5" /> Open Partnership
+                              </Link>
+                            </Button>
+                          </CardContent>
                         </Card>
                       ))}
                     </div>
                   ) : (
                     <div className="p-12 border-2 border-dashed rounded-lg text-center text-muted-foreground">
-                      You haven't funded any projects yet.
+                      No active partnerships yet. Browse proposals to start funding.
                     </div>
                   )}
                 </div>
