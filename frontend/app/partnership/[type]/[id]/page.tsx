@@ -422,7 +422,7 @@ export default function PartnershipPage() {
                 )}
 
                 {/* ── Hero ── */}
-                {currentView !== "mou" && (
+                {currentView === "dashboard" && (
                     <div className={`border-b pt-12 pb-10 px-6 transition-colors duration-700 ${bothConfirmed ? "bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-green-100" : "bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50 border-blue-100"}`}>
                         <div className="mx-auto max-w-5xl">
                             <Button variant="ghost" size="sm" className="mb-6 -ml-2 text-muted-foreground hover:text-foreground" onClick={() => router.back()}>
@@ -762,6 +762,40 @@ export default function PartnershipPage() {
                             </Card>
                         </div>
                     </div>
+                ) : currentView === "mou" ? (
+                    <>
+                        <PartnershipJourneyBar
+                            currentView={currentView}
+                            bothConfirmed={bothConfirmed}
+                            docsVerified={docsVerified}
+                            onStepClick={(v) => setCurrentView(v)}
+                        />
+                        <MouSigning
+                            partnership={fullPartnership}
+                            user={user}
+                            proposal={proposal}
+                            entityLabel={entityLabel}
+                            handleCloseMou={() => setCurrentView("dashboard")}
+                            handleOpenFundRelease={() => setCurrentView("fund-release")}
+                            updatePartnership={(p) => setFullPartnership(p)}
+                        />
+                    </>
+                ) : currentView === "fund-release" ? (
+                    <>
+                        <PartnershipJourneyBar
+                            currentView={currentView}
+                            bothConfirmed={bothConfirmed}
+                            docsVerified={docsVerified}
+                            onStepClick={(v) => setCurrentView(v)}
+                        />
+                        <FundRelease
+                            partnership={fullPartnership}
+                            proposal={proposal}
+                            user={user}
+                            isFunder={user?.role === "funder"}
+                            onBack={() => setCurrentView("dashboard")}
+                        />
+                    </>
                 ) : (
                     <>
                         <PartnershipJourneyBar
@@ -770,40 +804,18 @@ export default function PartnershipPage() {
                             docsVerified={docsVerified}
                             onStepClick={(v) => setCurrentView(v)}
                         />
-                        <div className="relative">
-                            {currentView === "mou" ? (
-                                <MouSigning
-                                    partnership={fullPartnership}
-                                    user={user}
-                                    proposal={proposal}
-                                    entityLabel={entityLabel}
-                                    handleCloseMou={() => setCurrentView("dashboard")}
-                                    handleOpenFundRelease={() => setCurrentView("fund-release")}
-                                    updatePartnership={(p) => setFullPartnership(p)}
-                                />
-                            ) : currentView === "fund-release" ? (
-                                <FundRelease
-                                    partnership={fullPartnership}
-                                    proposal={proposal}
-                                    user={user}
-                                    isFunder={user?.role === "funder"}
-                                    onBack={() => setCurrentView("dashboard")}
-                                />
-                            ) : (
-                                <ActiveDashboard
-                                    partnership={fullPartnership}
-                                    user={user}
-                                    proposal={proposal}
-                                    entityLabel={entityLabel}
-                                    docs={docs}
-                                    docsVerified={docsVerified}
-                                    onVerifyDocs={handleVerifyDocs}
-                                    onSendMessage={handleSendMessage}
-                                    handleOpenMou={() => setCurrentView("mou")}
-                                    handleOpenFundRelease={() => setCurrentView("fund-release")}
-                                />
-                            )}
-                        </div>
+                        <ActiveDashboard
+                            partnership={fullPartnership}
+                            user={user}
+                            proposal={proposal}
+                            entityLabel={entityLabel}
+                            docs={docs}
+                            docsVerified={docsVerified}
+                            onVerifyDocs={handleVerifyDocs}
+                            onSendMessage={handleSendMessage}
+                            handleOpenMou={() => setCurrentView("mou")}
+                            handleOpenFundRelease={() => setCurrentView("fund-release")}
+                        />
                     </>
                 )}
             </main>
